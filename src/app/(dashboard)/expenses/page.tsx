@@ -1,0 +1,261 @@
+"use client";
+
+import { Receipt, Plus } from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { StatCard } from "@/components/ui/stat-card";
+import { CardTitle } from "@/components/ui/card";
+import { monthlyExpenses, toMonthly, fmt } from "@/lib/finance";
+import { mockExpenses } from "@/lib/mock-data";
+
+const total = monthlyExpenses(mockExpenses);
+const fixed = mockExpenses
+  .filter((e) => e.isFixed)
+  .reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
+const variable = total - fixed;
+const essential = mockExpenses
+  .filter((e) => e.isEssential)
+  .reduce((s, e) => s + toMonthly(e.amount, e.frequency), 0);
+
+const categoryTotals = mockExpenses.reduce(
+  (acc, e) => {
+    const m = toMonthly(e.amount, e.frequency);
+    acc[e.category] = (acc[e.category] || 0) + m;
+    return acc;
+  },
+  {} as Record<string, number>
+);
+
+const chartData = Object.entries(categoryTotals)
+  .map(([category, amount]) => ({
+    category: category.charAt(0).toUpperCase() + category.slice(1),
+    amount: Math.round(amount),
+  }))
+  .sort((a, b) => b.amount - a.amount)
+  .slice(0, 8);
+
+const categoryColors: Record<string, string> = {
+  housing: "var(--accent-blue)",
+  utilities: "var(--accent-green)",
+  food: "var(--accent-amber)",
+  transport: "var(--accent-purple)",
+  insurance: "var(--accent-red)",
+  healthcare: "var(--accent-red)",
+  savings: "var(--accent-green)",
+  debt: "var(--accent-red)",
+  subscriptions: "var(--text-secondary)",
+  entertainment: "var(--accent-amber)",
+  education: "var(--accent-blue)",
+  clothing: "var(--accent-purple)",
+  personal: "var(--text-muted)",
+  other: "var(--text-muted)",
+};
+
+export default function ExpensesPage() {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1
+            className="text-2xl font-semibold tracking-tight"
+            style={{ color: "var(--text-primary)" }}
+          >
+            Expenses
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            Monthly spending breakdown
+          </p>
+        </div>
+        <button
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
+          style={{ background: "var(--accent-blue)", color: "#fff" }}
+        >
+          <Plus size={15} /> Add Expense
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Monthly"
+          value={fmt(total)}
+          icon={Receipt}
+          accent="red"
+        />
+        <StatCard
+          title="Fixed Expenses"
+          value={fmt(fixed)}
+          sub="Recurring, predictable"
+          accent="blue"
+        />
+        <StatCard
+          title="Variable Expenses"
+          value={fmt(variable)}
+          sub="Fluctuates month-to-month"
+          accent="amber"
+        />
+        <StatCard
+          title="Essential"
+          value={fmt(essential)}
+          sub="Non-discretionary"
+          accent="purple"
+        />
+      </div>
+
+      <div
+        className="rounded-xl border p-5"
+        style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
+      >
+        <CardTitle>Spending by Category</CardTitle>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={chartData} margin={{ top: 16 }} layout="vertical">
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="var(--border-subtle)"
+              horizontal={false}
+            />
+            <XAxis
+              type="number"
+              tick={{ fill: "var(--text-muted)", fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`}
+            />
+            <YAxis
+              dataKey="category"
+              type="category"
+              tick={{ fill: "var(--text-secondary)", fontSize: 12 }}
+              axisLine={false}
+              tickLine={false}
+              width={90}
+            />
+            <Tooltip
+              contentStyle={{
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border)",
+                borderRadius: 8,
+                color: "var(--text-primary)",
+                fontSize: 12,
+              }}
+              formatter={(v) => [fmt(Number(v)), "Monthly"]}
+            />
+            <Bar dataKey="amount" fill="var(--accent-blue)" radius={[0, 4, 4, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Expense List */}
+      <div
+        className="rounded-xl border overflow-hidden"
+        style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
+      >
+        <div className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
+          <CardTitle>All Expenses</CardTitle>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
+              {["Expense", "Category", "Amount", "Frequency", "Monthly", "Type"].map(
+                (h) => (
+                  <th
+                    key={h}
+                    className="px-5 py-3 text-left text-xs font-medium"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {h}
+                  </th>
+                )
+              )}
+            </tr>
+          </thead>
+          <tbody>
+            {mockExpenses.map((exp, i) => {
+              const monthly = toMonthly(exp.amount, exp.frequency);
+              return (
+                <tr
+                  key={exp.id}
+                  style={{
+                    borderBottom:
+                      i < mockExpenses.length - 1
+                        ? "1px solid var(--border-subtle)"
+                        : "none",
+                  }}
+                >
+                  <td
+                    className="px-5 py-3 font-medium"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {exp.name}
+                  </td>
+                  <td className="px-5 py-3">
+                    <span
+                      className="px-2 py-0.5 rounded-full text-xs font-medium capitalize"
+                      style={{
+                        background: "var(--bg-elevated)",
+                        color: categoryColors[exp.category] || "var(--text-muted)",
+                      }}
+                    >
+                      {exp.category}
+                    </span>
+                  </td>
+                  <td
+                    className="px-5 py-3"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {fmt(exp.amount)}
+                  </td>
+                  <td
+                    className="px-5 py-3"
+                    style={{ color: "var(--text-secondary)" }}
+                  >
+                    {exp.frequency}
+                  </td>
+                  <td
+                    className="px-5 py-3 font-semibold"
+                    style={{ color: "var(--accent-red)" }}
+                  >
+                    {fmt(monthly)}
+                  </td>
+                  <td className="px-5 py-3">
+                    <div className="flex gap-1.5">
+                      <span
+                        className="px-2 py-0.5 rounded-full text-xs"
+                        style={{
+                          background: exp.isFixed
+                            ? "var(--accent-blue-dim)"
+                            : "var(--bg-muted)",
+                          color: exp.isFixed
+                            ? "var(--accent-blue)"
+                            : "var(--text-muted)",
+                        }}
+                      >
+                        {exp.isFixed ? "Fixed" : "Variable"}
+                      </span>
+                      {exp.isEssential && (
+                        <span
+                          className="px-2 py-0.5 rounded-full text-xs"
+                          style={{
+                            background: "var(--accent-green-dim)",
+                            color: "var(--accent-green)",
+                          }}
+                        >
+                          Essential
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
