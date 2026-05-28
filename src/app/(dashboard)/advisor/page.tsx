@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, RotateCcw, User } from "lucide-react";
-import { useFinanceStore } from "@/store/finance-store";
+import { useAppStore } from "@/store/app-store";
 import { buildFinancialSummary, toMonthly } from "@/lib/finance";
 
 interface Message {
@@ -21,11 +21,11 @@ const SUGGESTED_PROMPTS = [
 ];
 
 function buildFinancialContext(
-  incomes: ReturnType<typeof useFinanceStore>["incomes"],
-  expenses: ReturnType<typeof useFinanceStore>["expenses"],
-  assets: ReturnType<typeof useFinanceStore>["assets"],
-  debts: ReturnType<typeof useFinanceStore>["debts"],
-  projects: ReturnType<typeof useFinanceStore>["projects"],
+  incomes: ReturnType<typeof useAppStore>["income"],
+  expenses: ReturnType<typeof useAppStore>["expenses"],
+  assets: ReturnType<typeof useAppStore>["assets"],
+  debts: ReturnType<typeof useAppStore>["debts"],
+  projects: ReturnType<typeof useAppStore>["projects"],
 ) {
   const summary = buildFinancialSummary(incomes, expenses, assets, debts);
 
@@ -134,7 +134,7 @@ function MessageBubble({ message }: { message: Message }) {
 }
 
 export default function AdvisorPage() {
-  const { incomes, expenses, assets, debts, projects } = useFinanceStore();
+  const { income: incomes, expenses, assets, debts, projects } = useAppStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
