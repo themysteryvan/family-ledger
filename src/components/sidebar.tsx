@@ -16,6 +16,7 @@ import {
   HeartPulse,
   Settings,
   Wallet,
+  Upload,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Income", href: "/income", icon: TrendingUp },
   { label: "Expenses", href: "/expenses", icon: Receipt },
+  { label: "Import", href: "/import", icon: Upload },
   { label: "Budget", href: "/budget", icon: Target },
   { label: "Assets", href: "/assets", icon: Building2 },
   { label: "Debts", href: "/debts", icon: CreditCard },
