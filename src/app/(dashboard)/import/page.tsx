@@ -114,64 +114,22 @@ function parseCSV(text: string): ParsedRow[] {
 }
 
 async function categorizWithAI(rows: ParsedRow[]): Promise<Record<string, Expense["category"]>> {
-  const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY;
-  if (!apiKey) throw new Error("NEXT_PUBLIC_ANTHROPIC_API_KEY is not set");
-
-  const transactionList = rows
-    .map((r, i) => `${i}: "${r.description}" $${r.amount.toFixed(2)}`)
-    .join("\n");
-
-  const prompt = `You are a personal finance assistant. Categorize each transaction into exactly one of these categories:
-housing, utilities, food, transport, kids, health, insurance, entertainment, personal, pets, savings, other
-
-Transactions:
-${transactionList}
-
-Reply with ONLY a JSON object mapping each index to its category label (lowercase). Example:
-{"0": "food", "1": "transport", "2": "housing"}
-
-Use these guidelines:
-- housing: rent, mortgage, HOA, home repairs, hardware stores
-- utilities: electric, gas, water, internet, phone, cell
-- food: groceries, restaurants, coffee, delivery apps
-- transport: gas stations, auto repair, parking, tolls, rideshare, public transit
-- kids: daycare, school, tutoring, children's activities, toys
-- health: pharmacy, doctor, dentist, gym, medical
-- insurance: any insurance premium
-- entertainment: streaming, movies, concerts, sports, hobbies
-- personal: clothing, beauty, haircuts, Amazon (general shopping)
-- pets: vet, pet food, pet supplies
-- savings: transfers to savings, investments, 401k
-- other: anything that doesn't fit above`;
-
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch("/api/categorize", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
-      messages: [{ role: "user", content: prompt }],
+      transactions: rows.map((r, i) => ({ index: i, description: r.description, amount: r.amount })),
     }),
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Anthropic API error ${res.status}: ${err}`);
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || "Categorization failed");
   }
 
-  const data = await res.json();
-  const text = data.content?.[0]?.text || "";
-
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) throw new Error("Could not parse AI response");
-
-  const raw: Record<string, string> = JSON.parse(jsonMatch[0]);
+  const { categories } = await res.json() as { categories: Record<string, string> };
   const result: Record<string, Expense["category"]> = {};
-  for (const [idx, label] of Object.entries(raw)) {
+  for (const [idx, label] of Object.entries(categories)) {
     result[idx] = CATEGORY_MAP[label.toLowerCase()] ?? "other";
   }
   return result;
