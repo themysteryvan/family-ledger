@@ -17,10 +17,12 @@ import {
   Settings,
   Wallet,
   Upload,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
+  { label: "Advisor", href: "/advisor", icon: Sparkles },
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Income", href: "/income", icon: TrendingUp },
   { label: "Expenses", href: "/expenses", icon: Receipt },
