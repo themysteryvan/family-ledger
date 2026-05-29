@@ -6,7 +6,6 @@ import { useFinanceStore } from "@/store/finance-store";
 import { fmt } from "@/lib/finance";
 import type { Expense } from "@/types";
 
-// Maps AI-returned labels to Expense category values
 const CATEGORY_MAP: Record<string, Expense["category"]> = {
   housing: "housing",
   utilities: "utilities",
@@ -48,7 +47,6 @@ interface ParsedRow {
   include: boolean;
 }
 
-// Detect and parse common bank CSV formats
 function parseCSV(text: string): ParsedRow[] {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
@@ -68,7 +66,6 @@ function parseCSV(text: string): ParsedRow[] {
     const line = lines[i].trim();
     if (!line) continue;
 
-    // Handle quoted fields with commas inside
     const cells: string[] = [];
     let cur = "";
     let inQuote = false;
@@ -82,7 +79,6 @@ function parseCSV(text: string): ParsedRow[] {
     const desc = col(cells, "description", "merchant", "memo", "payee", "name", "details");
     const dateStr = col(cells, "date", "posted", "transaction date", "trans date");
 
-    // Amount: try debit column first (positive = expense), then amount
     let amount = 0;
     const debit = col(cells, "debit", "withdrawal", "charge");
     const credit = col(cells, "credit", "deposit");
@@ -92,28 +88,43 @@ function parseCSV(text: string): ParsedRow[] {
       amount = Math.abs(parseFloat(debit.replace(/[$,]/g, "")) || 0);
     } else if (rawAmount) {
       const parsed = parseFloat(rawAmount.replace(/[$,]/g, "")) || 0;
-      // Negative amounts are debits in some formats
       amount = Math.abs(parsed);
-      // Skip credits (positive in "amount" column with a "credit" column present)
       if (parsed > 0 && credit) continue;
     }
 
     if (!desc || amount === 0) continue;
 
-    rows.push({
-      id: `${i}-${Date.now()}`,
-      date: dateStr || "",
-      description: desc,
-      amount,
-      category: "other",
-      aiCategory: null,
-      include: true,
-    });
+    rows.push({ id: `${i}-${Date.now()}`, date: dateStr || "", description: desc, amount, category: "other", aiCategory: null, include: true });
   }
   return rows;
 }
 
-async function categorizWithAI(rows: ParsedRow[]): Promise<Record<string, Expense["category"]>> {
+async function parsePDF(file: File): Promise<ParsedRow[]> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch("/api/parse-pdf", { method: "POST", body: formData });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || "PDF parsing failed");
+  }
+
+  const { transactions } = await res.json() as {
+    transactions: Array<{ date: string; description: string; amount: number }>;
+  };
+
+  return transactions.map((t, i) => ({
+    id: `pdf-${i}-${Date.now()}`,
+    date: t.date,
+    description: t.description,
+    amount: t.amount,
+    category: "other" as Expense["category"],
+    aiCategory: null,
+    include: true,
+  }));
+}
+
+async function categorizeWithAI(rows: ParsedRow[]): Promise<Record<string, Expense["category"]>> {
   const res = await fetch("/api/categorize", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -135,7 +146,7 @@ async function categorizWithAI(rows: ParsedRow[]): Promise<Record<string, Expens
   return result;
 }
 
-type Stage = "upload" | "categorizing" | "review" | "done";
+type Stage = "upload" | "parsing" | "categorizing" | "review" | "done";
 
 export default function ImportPage() {
   const { addExpense } = useFinanceStore();
@@ -144,34 +155,17 @@ export default function ImportPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState("");
+  const [fileType, setFileType] = useState<"csv" | "pdf">("csv");
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const processFile = useCallback(async (file: File) => {
-    if (!file.name.endsWith(".csv")) {
-      setError("Please upload a CSV file.");
-      return;
-    }
-    setError(null);
-    setFileName(file.name);
-
-    const text = await file.text();
-    const parsed = parseCSV(text);
-
-    if (parsed.length === 0) {
-      setError("No transactions found. Make sure the CSV has Date, Description, and Amount columns.");
-      return;
-    }
-
-    setRows(parsed);
+  const runCategorization = useCallback(async (parsed: ParsedRow[]) => {
     setStage("categorizing");
-
     try {
-      // Batch in groups of 50 to stay within prompt limits
       const BATCH = 50;
       const updated = [...parsed];
       for (let start = 0; start < parsed.length; start += BATCH) {
         const batch = parsed.slice(start, start + BATCH);
-        const mapping = await categorizWithAI(batch);
+        const mapping = await categorizeWithAI(batch);
         for (const [idxStr, cat] of Object.entries(mapping)) {
           const globalIdx = start + parseInt(idxStr, 10);
           if (updated[globalIdx]) {
@@ -180,14 +174,54 @@ export default function ImportPage() {
         }
       }
       setRows(updated);
-      setStage("review");
     } catch (e) {
       setError(e instanceof Error ? e.message : "AI categorization failed.");
-      // Still show review with default categories
       setRows(parsed.map((r) => ({ ...r, aiCategory: null })));
-      setStage("review");
     }
+    setStage("review");
   }, []);
+
+  const processFile = useCallback(async (file: File) => {
+    const isPDF = file.name.toLowerCase().endsWith(".pdf");
+    const isCSV = file.name.toLowerCase().endsWith(".csv");
+
+    if (!isPDF && !isCSV) {
+      setError("Please upload a CSV or PDF file.");
+      return;
+    }
+
+    setError(null);
+    setFileName(file.name);
+    setFileType(isPDF ? "pdf" : "csv");
+
+    if (isPDF) {
+      setStage("parsing");
+      let parsed: ParsedRow[];
+      try {
+        parsed = await parsePDF(file);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "PDF parsing failed.");
+        setStage("upload");
+        return;
+      }
+      if (parsed.length === 0) {
+        setError("No transactions found in this PDF.");
+        setStage("upload");
+        return;
+      }
+      setRows(parsed);
+      await runCategorization(parsed);
+    } else {
+      const text = await file.text();
+      const parsed = parseCSV(text);
+      if (parsed.length === 0) {
+        setError("No transactions found. Make sure the CSV has Date, Description, and Amount columns.");
+        return;
+      }
+      setRows(parsed);
+      await runCategorization(parsed);
+    }
+  }, [runCategorization]);
 
   function onDrop(e: React.DragEvent) {
     e.preventDefault();
@@ -232,14 +266,17 @@ export default function ImportPage() {
   const includedCount = rows.filter((r) => r.include).length;
   const totalAmount = rows.filter((r) => r.include).reduce((s, r) => s + r.amount, 0);
 
+  const parsingLabel = stage === "parsing"
+    ? { title: "Reading PDF…", sub: "Extracting transaction text from your statement" }
+    : { title: `Analyzing ${rows.length} transactions…`, sub: "Claude is categorizing your spending" };
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Import Transactions</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Upload a bank or credit card CSV and let AI categorize your transactions</p>
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Upload a bank statement or CSV export and let AI categorize your transactions</p>
       </div>
 
-      {/* Error banner */}
       {error && (
         <div className="flex items-start gap-3 px-4 py-3 rounded-lg" style={{ background: "var(--accent-red-dim)", border: "1px solid var(--accent-red)" }}>
           <AlertCircle size={16} className="flex-shrink-0 mt-0.5" style={{ color: "var(--accent-red)" }} />
@@ -250,8 +287,8 @@ export default function ImportPage() {
         </div>
       )}
 
-      {/* Upload stage */}
-      {(stage === "upload") && (
+      {/* Upload */}
+      {stage === "upload" && (
         <div
           onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
           onDragLeave={() => setIsDragging(false)}
@@ -267,44 +304,58 @@ export default function ImportPage() {
             <Upload size={26} style={{ color: "var(--accent-blue)" }} />
           </div>
           <div className="text-center">
-            <p className="font-medium" style={{ color: "var(--text-primary)" }}>Drop a CSV file here, or click to browse</p>
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Supports most bank and credit card exports</p>
+            <p className="font-medium" style={{ color: "var(--text-primary)" }}>Drop a file here, or click to browse</p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Supports CSV exports and PDF bank statements</p>
+          </div>
+          <div className="flex items-center gap-3">
+            {[
+              { label: "CSV", desc: "Chase, BoA, Citi…" },
+              { label: "PDF", desc: "Bank statements" },
+            ].map(({ label, desc }) => (
+              <div key={label} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "var(--bg-elevated)" }}>
+                <FileText size={13} style={{ color: "var(--accent-blue)" }} />
+                <span className="text-xs font-medium" style={{ color: "var(--text-primary)" }}>{label}</span>
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>{desc}</span>
+              </div>
+            ))}
           </div>
           <p className="text-xs px-6 text-center" style={{ color: "var(--text-muted)" }}>
-            Needs columns for date, description/merchant, and amount. Works with Chase, Bank of America, Citi, Wells Fargo, and similar formats.
+            PDF must be text-based (not a scanned image). CSV needs date, description, and amount columns.
           </p>
-          <input ref={fileRef} type="file" accept=".csv" className="hidden" onChange={onFileInput} />
+          <input ref={fileRef} type="file" accept=".csv,.pdf" className="hidden" onChange={onFileInput} />
         </div>
       )}
 
-      {/* Categorizing stage */}
-      {stage === "categorizing" && (
+      {/* Parsing / categorizing spinner */}
+      {(stage === "parsing" || stage === "categorizing") && (
         <div className="rounded-xl border flex flex-col items-center justify-center gap-5 py-20" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <div className="flex items-center justify-center w-14 h-14 rounded-2xl" style={{ background: "var(--accent-blue-dim)" }}>
             <Loader2 size={26} className="animate-spin" style={{ color: "var(--accent-blue)" }} />
           </div>
           <div className="text-center">
-            <p className="font-medium" style={{ color: "var(--text-primary)" }}>Analyzing {rows.length} transactions…</p>
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Claude is categorizing your spending</p>
+            <p className="font-medium" style={{ color: "var(--text-primary)" }}>{parsingLabel.title}</p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{parsingLabel.sub}</p>
           </div>
           <div className="flex items-center gap-2 text-xs px-4 py-2 rounded-full" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
             <Sparkles size={13} style={{ color: "var(--accent-blue)" }} />
-            Powered by Claude claude-sonnet-4-20250514
+            Powered by Claude claude-sonnet-4-5
           </div>
         </div>
       )}
 
-      {/* Review stage */}
+      {/* Review */}
       {stage === "review" && (
         <>
-          {/* Summary bar */}
           <div className="flex items-center justify-between rounded-xl border px-5 py-4" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
             <div className="flex items-center gap-6">
               <div>
                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>File</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <FileText size={13} style={{ color: "var(--accent-blue)" }} />
+                  <FileText size={13} style={{ color: fileType === "pdf" ? "var(--accent-red)" : "var(--accent-blue)" }} />
                   <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{fileName}</p>
+                  <span className="text-xs px-1.5 py-0.5 rounded font-medium uppercase" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
+                    {fileType}
+                  </span>
                 </div>
               </div>
               <div>
@@ -337,7 +388,6 @@ export default function ImportPage() {
             </div>
           </div>
 
-          {/* Review table */}
           <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
             <table className="w-full text-sm">
               <thead>
@@ -347,7 +397,6 @@ export default function ImportPage() {
                       type="checkbox"
                       checked={rows.every((r) => r.include)}
                       onChange={(e) => setRows((prev) => prev.map((r) => ({ ...r, include: e.target.checked })))}
-                      className="rounded"
                       style={{ accentColor: "var(--accent-blue)" }}
                     />
                   </th>
@@ -358,36 +407,21 @@ export default function ImportPage() {
               </thead>
               <tbody>
                 {rows.map((row, i) => (
-                  <tr
-                    key={row.id}
-                    style={{
-                      borderBottom: i < rows.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                      opacity: row.include ? 1 : 0.4,
-                    }}
-                  >
+                  <tr key={row.id} style={{ borderBottom: i < rows.length - 1 ? "1px solid var(--border-subtle)" : "none", opacity: row.include ? 1 : 0.4 }}>
                     <td className="px-4 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={row.include}
-                        onChange={(e) => updateRow(row.id, { include: e.target.checked })}
-                        style={{ accentColor: "var(--accent-blue)" }}
-                      />
+                      <input type="checkbox" checked={row.include} onChange={(e) => updateRow(row.id, { include: e.target.checked })} style={{ accentColor: "var(--accent-blue)" }} />
                     </td>
-                    <td className="px-4 py-2.5 text-xs" style={{ color: "var(--text-muted)" }}>{row.date || "—"}</td>
+                    <td className="px-4 py-2.5 text-xs whitespace-nowrap" style={{ color: "var(--text-muted)" }}>{row.date || "—"}</td>
                     <td className="px-4 py-2.5 max-w-xs">
                       <p className="truncate font-medium" style={{ color: "var(--text-primary)" }}>{row.description}</p>
                     </td>
-                    <td className="px-4 py-2.5 font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(row.amount)}</td>
+                    <td className="px-4 py-2.5 font-semibold whitespace-nowrap" style={{ color: "var(--accent-red)" }}>{fmt(row.amount)}</td>
                     <td className="px-4 py-2.5">
                       <select
                         value={row.category}
                         onChange={(e) => updateRow(row.id, { category: e.target.value as Expense["category"] })}
                         className="text-xs rounded-lg px-2 py-1.5 outline-none"
-                        style={{
-                          background: "var(--bg-elevated)",
-                          color: "var(--text-primary)",
-                          border: "1px solid var(--border)",
-                        }}
+                        style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
                       >
                         {DISPLAY_CATEGORIES.map((c) => (
                           <option key={c.value} value={c.value}>{c.label}</option>
@@ -396,13 +430,9 @@ export default function ImportPage() {
                     </td>
                     <td className="px-4 py-2.5">
                       {row.aiCategory ? (
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--accent-green-dim)", color: "var(--accent-green)" }}>
-                          AI
-                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--accent-green-dim)", color: "var(--accent-green)" }}>AI</span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--bg-muted)", color: "var(--text-muted)" }}>
-                          manual
-                        </span>
+                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--bg-muted)", color: "var(--text-muted)" }}>manual</span>
                       )}
                     </td>
                   </tr>
@@ -413,7 +443,7 @@ export default function ImportPage() {
         </>
       )}
 
-      {/* Done stage */}
+      {/* Done */}
       {stage === "done" && (
         <div className="rounded-xl border flex flex-col items-center justify-center gap-5 py-20" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <div className="flex items-center justify-center w-14 h-14 rounded-2xl" style={{ background: "var(--accent-green-dim)" }}>
