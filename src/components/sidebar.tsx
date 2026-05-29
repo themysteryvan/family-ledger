@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -18,8 +19,11 @@ import {
   Wallet,
   Upload,
   Sparkles,
+  LogIn,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { label: "Advisor", href: "/advisor", icon: Sparkles },
@@ -40,51 +44,51 @@ const navItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUserEmail(user?.email ?? null);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
+      setUserEmail(session?.user?.email ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push("/dashboard");
+  }
 
   return (
     <aside
       className="w-56 flex-shrink-0 flex flex-col h-full"
-      style={{
-        background: "var(--bg-surface)",
-        borderRight: "1px solid var(--border-subtle)",
-      }}
+      style={{ background: "var(--bg-surface)", borderRight: "1px solid var(--border-subtle)" }}
     >
       {/* Logo */}
-      <div
-        className="flex items-center gap-2.5 px-5 h-14 border-b"
-        style={{ borderColor: "var(--border-subtle)" }}
-      >
-        <span
-          className="flex items-center justify-center w-7 h-7 rounded-lg"
-          style={{ background: "var(--accent-blue-dim)" }}
-        >
+      <div className="flex items-center gap-2.5 px-5 h-14 border-b" style={{ borderColor: "var(--border-subtle)" }}>
+        <span className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ background: "var(--accent-blue-dim)" }}>
           <Wallet size={15} style={{ color: "var(--accent-blue)" }} />
         </span>
-        <span
-          className="font-semibold text-sm tracking-tight"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <span className="font-semibold text-sm tracking-tight" style={{ color: "var(--text-primary)" }}>
           Family Ledger
         </span>
       </div>
 
       {/* Family badge */}
       <div className="px-4 py-3">
-        <div
-          className="rounded-lg px-3 py-2"
-          style={{ background: "var(--bg-elevated)" }}
-        >
-          <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>
-            Henderson Family
-          </p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-            Jake & Sarah
-          </p>
+        <div className="rounded-lg px-3 py-2" style={{ background: "var(--bg-elevated)" }}>
+          <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Henderson Family</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Jake & Sarah</p>
         </div>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 px-3 pb-4 overflow-y-auto">
+      <nav className="flex-1 px-3 overflow-y-auto">
         <ul className="space-y-0.5">
           {navItems.map(({ label, href, icon: Icon }) => {
             const active = pathname === href || pathname.startsWith(href + "/");
@@ -94,28 +98,11 @@ export function Sidebar() {
                   href={href}
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    active
-                      ? "text-[var(--text-primary)]"
-                      : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                    active ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
                   )}
-                  style={
-                    active
-                      ? {
-                          background: "var(--bg-elevated)",
-                          color: "var(--text-primary)",
-                        }
-                      : {}
-                  }
+                  style={active ? { background: "var(--bg-elevated)", color: "var(--text-primary)" } : {}}
                 >
-                  <Icon
-                    size={16}
-                    style={{
-                      color: active
-                        ? "var(--accent-blue)"
-                        : "var(--text-muted)",
-                      flexShrink: 0,
-                    }}
-                  />
+                  <Icon size={16} style={{ color: active ? "var(--accent-blue)" : "var(--text-muted)", flexShrink: 0 }} />
                   {label}
                 </Link>
               </li>
@@ -123,6 +110,32 @@ export function Sidebar() {
           })}
         </ul>
       </nav>
+
+      {/* Auth footer */}
+      <div className="px-3 py-3 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+        {userEmail ? (
+          <div>
+            <p className="text-xs px-3 mb-1.5 truncate" style={{ color: "var(--text-muted)" }}>{userEmail}</p>
+            <button
+              onClick={handleSignOut}
+              className="flex items-center gap-2.5 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--bg-elevated)]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              <LogOut size={15} style={{ flexShrink: 0 }} />
+              Sign out
+            </button>
+          </div>
+        ) : (
+          <Link
+            href="/login"
+            className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--bg-elevated)]"
+            style={{ color: "var(--text-muted)" }}
+          >
+            <LogIn size={15} style={{ flexShrink: 0 }} />
+            Sign in
+          </Link>
+        )}
+      </div>
     </aside>
   );
 }

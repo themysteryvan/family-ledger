@@ -103,30 +103,54 @@ function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === "user";
 
   const formatted = message.content
-    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-    .replace(/^### (.+)$/gm, '<p class="font-semibold mt-3 mb-1" style="color:var(--text-primary)">$1</p>')
-    .replace(/^## (.+)$/gm, '<p class="font-semibold mt-3 mb-1" style="color:var(--text-primary)">$1</p>')
-    .replace(/^- (.+)$/gm, '<li style="color:var(--text-secondary)">$1</li>')
-    .replace(/(<li[\s\S]*?<\/li>)+/g, (match) => `<ul class="list-disc pl-4 space-y-1 my-2">${match}</ul>`)
-    .replace(/\n\n/g, '<br class="block my-2" />')
+    // Bold — green for assistant, white for user
+    .replace(
+      /\*\*(.*?)\*\*/g,
+      isUser
+        ? "<strong style=\"color:#fff;font-weight:600\">$1</strong>"
+        : "<strong style=\"color:var(--accent-green);font-weight:600\">$1</strong>"
+    )
+    // h3 / h2 headers — section dividers
+    .replace(
+      /^### (.+)$/gm,
+      '<p style="color:var(--text-primary);font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-top:1.25rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border-subtle)">$1</p>'
+    )
+    .replace(
+      /^## (.+)$/gm,
+      '<p style="color:var(--text-primary);font-size:0.8rem;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;margin-top:1.25rem;margin-bottom:0.5rem;padding-bottom:0.4rem;border-bottom:1px solid var(--border-subtle)">$1</p>'
+    )
+    // Bullet items
+    .replace(
+      /^- (.+)$/gm,
+      '<li style="color:var(--text-primary);line-height:1.7;padding-left:0.25rem">$1</li>'
+    )
+    .replace(
+      /(<li[\s\S]*?<\/li>)+/g,
+      (match) => `<ul style="list-style-type:disc;padding-left:1.25rem;margin:0.75rem 0;display:flex;flex-direction:column;gap:0.35rem">${match}</ul>`
+    )
+    // Paragraph breaks
+    .replace(/\n\n/g, '<div style="height:0.75rem"></div>')
     .replace(/\n/g, "<br />");
 
   return (
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
       <div
-        className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center mt-0.5"
+        className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5"
         style={{ background: isUser ? "var(--accent-blue-dim)" : "var(--accent-purple-dim)" }}
       >
         {isUser
-          ? <User size={14} style={{ color: "var(--accent-blue)" }} />
-          : <Sparkles size={14} style={{ color: "var(--accent-purple)" }} />
+          ? <User size={15} style={{ color: "var(--accent-blue)" }} />
+          : <Sparkles size={15} style={{ color: "var(--accent-purple)" }} />
         }
       </div>
       <div
-        className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${isUser ? "rounded-tr-sm" : "rounded-tl-sm"}`}
+        className={`max-w-[78%] rounded-2xl px-5 py-4 ${isUser ? "rounded-tr-sm" : "rounded-tl-sm"}`}
         style={{
           background: isUser ? "var(--accent-blue)" : "var(--bg-elevated)",
           color: isUser ? "#fff" : "var(--text-secondary)",
+          fontSize: "0.9rem",
+          lineHeight: "1.75",
+          border: isUser ? "none" : "1px solid var(--border-subtle)",
         }}
         dangerouslySetInnerHTML={{ __html: formatted }}
       />
