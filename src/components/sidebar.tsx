@@ -113,11 +113,11 @@ export function Sidebar() {
                   href={href}
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-                    active ? "text-[var(--text-primary)]" : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                    active ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
                   )}
                   style={active ? { background: "var(--bg-elevated)", color: "var(--text-primary)" } : {}}
                 >
-                  <Icon size={16} style={{ color: active ? "var(--accent-blue)" : "var(--text-muted)", flexShrink: 0 }} />
+                  <Icon size={16} style={{ color: active ? "var(--accent-blue)" : "var(--text-secondary)", flexShrink: 0 }} />
                   {label}
                 </Link>
               </li>
