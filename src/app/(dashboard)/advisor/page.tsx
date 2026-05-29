@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, RotateCcw, User } from "lucide-react";
 import { useFinanceStore } from "@/store/finance-store";
 import { buildFinancialSummary, toMonthly } from "@/lib/finance";
+import type { Income, Expense, Asset, Debt, Project } from "@/types";
 
 interface Message {
   id: string;
@@ -21,11 +22,11 @@ const SUGGESTED_PROMPTS = [
 ];
 
 function buildFinancialContext(
-  incomes: ReturnType<typeof useFinanceStore>["incomes"],
-  expenses: ReturnType<typeof useFinanceStore>["expenses"],
-  assets: ReturnType<typeof useFinanceStore>["assets"],
-  debts: ReturnType<typeof useFinanceStore>["debts"],
-  projects: ReturnType<typeof useFinanceStore>["projects"],
+  incomes: Income[],
+  expenses: Expense[],
+  assets: Asset[],
+  debts: Debt[],
+  projects: Project[],
 ) {
   const summary = buildFinancialSummary(incomes, expenses, assets, debts);
 
