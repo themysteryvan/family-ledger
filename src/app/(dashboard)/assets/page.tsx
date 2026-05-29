@@ -13,6 +13,7 @@ import {
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AssetForm } from "@/components/forms/asset-form";
 import { useFinanceStore } from "@/store/finance-store";
 import { totalAssets, fmt } from "@/lib/finance";
@@ -98,7 +99,7 @@ export default function AssetsPage() {
         <StatCard title="Liquid Cash" value={fmt(liquid, true)} sub="Checking + HYSA" accent="amber" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {assets.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <CardTitle>Asset Allocation</CardTitle>
           <ResponsiveContainer width="100%" height={260}>
@@ -139,7 +140,7 @@ export default function AssetsPage() {
             ))}
           </div>
         </div>
-      </div>
+      </div>}
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
         <div className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
@@ -154,6 +155,11 @@ export default function AssetsPage() {
             </tr>
           </thead>
           <tbody>
+            {assets.length === 0 && (
+              <tr><td colSpan={7}>
+                <EmptyState icon={Building2} title="No assets yet" description="Add your home, retirement accounts, investments, and savings to track your total wealth." action="Add Asset" onAction={openAdd} />
+              </td></tr>
+            )}
             {assets.map((asset, i) => {
               const gainLoss = asset.purchasePrice != null ? asset.value - asset.purchasePrice : null;
               return (

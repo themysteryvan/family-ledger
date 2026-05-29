@@ -24,6 +24,7 @@ interface FinanceStore {
   householdId: string | null;
   householdName: string | null;
   isLoadedFromSupabase: boolean;
+  isAuthenticatedUser: boolean;
 
   loadFromSupabase: (userId: string) => Promise<void>;
   clearSupabaseData: () => void;
@@ -51,19 +52,30 @@ interface FinanceStore {
 }
 
 export const useFinanceStore = create<FinanceStore>((set, get) => ({
-  incomes: mockIncomes,
-  expenses: mockExpenses,
-  assets: mockAssets,
-  debts: mockDebts,
-  projects: mockProjects,
+  incomes: [],
+  expenses: [],
+  assets: [],
+  debts: [],
+  projects: [],
 
   householdId: null,
   householdName: null,
   isLoadedFromSupabase: false,
+  isAuthenticatedUser: false,
 
   // ── Load from Supabase ────────────────────────────────────────────────────
 
   async loadFromSupabase(userId: string) {
+    // Clear mock data immediately — authenticated users must never see it
+    set({
+      isAuthenticatedUser: true,
+      incomes: [],
+      expenses: [],
+      assets: [],
+      debts: [],
+      projects: [],
+    });
+
     const supabase = createClient();
 
     // Get or create household
@@ -141,6 +153,7 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
       householdId: null,
       householdName: null,
       isLoadedFromSupabase: false,
+      isAuthenticatedUser: false,
       incomes: mockIncomes,
       expenses: mockExpenses,
       assets: mockAssets,

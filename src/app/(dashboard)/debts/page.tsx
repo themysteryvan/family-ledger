@@ -5,6 +5,7 @@ import { CreditCard, Plus, Pencil, Trash2 } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { DebtForm } from "@/components/forms/debt-form";
 import { useFinanceStore } from "@/store/finance-store";
 import { totalDebt, fmt, fmtPct } from "@/lib/finance";
@@ -81,6 +82,11 @@ export default function DebtsPage() {
       </div>
 
       {/* Debt cards */}
+      {debts.length === 0 ? (
+        <div className="rounded-xl border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+          <EmptyState icon={CreditCard} title="No debts added" description="Track your mortgage, car loans, student loans, and credit cards here." action="Add Debt" onAction={openAdd} />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {debts.map((debt) => {
           const paidPct = debt.originalBalance > 0
@@ -143,6 +149,7 @@ export default function DebtsPage() {
           );
         })}
       </div>
+      )}
 
       {showModal && (
         <Modal title={editItem ? "Edit Debt" : "Add Debt"} onClose={() => { setShowModal(false); setEditItem(null); }}>

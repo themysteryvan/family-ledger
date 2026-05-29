@@ -14,6 +14,7 @@ import {
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { IncomeForm } from "@/components/forms/income-form";
 import { useFinanceStore } from "@/store/finance-store";
 import { monthlyIncome, toMonthly, fmt, fmtPct } from "@/lib/finance";
@@ -114,8 +115,8 @@ export default function IncomePage() {
         <StatCard title="Sarah" value={fmt(ownerTotals["Sarah"] || 0)} sub="per month" accent="amber" />
       </div>
 
-      {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* Charts — only shown when there is data */}
+      {incomes.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <CardTitle>Monthly by Owner</CardTitle>
           <ResponsiveContainer width="100%" height={200}>
@@ -158,7 +159,7 @@ export default function IncomePage() {
             })}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Table */}
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
@@ -174,6 +175,11 @@ export default function IncomePage() {
             </tr>
           </thead>
           <tbody>
+            {incomes.length === 0 && (
+              <tr><td colSpan={8}>
+                <EmptyState icon={TrendingUp} title="No income sources yet" description="Add your first income source to start tracking your household earnings." action="Add Income" onAction={openAdd} />
+              </td></tr>
+            )}
             {incomes.map((inc, i) => (
               <tr
                 key={inc.id}

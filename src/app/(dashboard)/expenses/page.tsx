@@ -14,6 +14,7 @@ import {
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ExpenseForm } from "@/components/forms/expense-form";
 import { useFinanceStore } from "@/store/finance-store";
 import { monthlyExpenses, toMonthly, fmt } from "@/lib/finance";
@@ -99,7 +100,7 @@ export default function ExpensesPage() {
         <StatCard title="Essential" value={fmt(essential)} sub="Non-discretionary" accent="purple" />
       </div>
 
-      <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+      {expenses.length > 0 && <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
         <CardTitle>Spending by Category</CardTitle>
         <ResponsiveContainer width="100%" height={220}>
           <BarChart data={chartData} margin={{ top: 16 }} layout="vertical">
@@ -113,7 +114,7 @@ export default function ExpensesPage() {
             <Bar dataKey="amount" fill="var(--accent-blue)" radius={[0, 4, 4, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </div>
+      </div>}
 
       <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
         <div className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
@@ -128,6 +129,11 @@ export default function ExpensesPage() {
             </tr>
           </thead>
           <tbody>
+            {expenses.length === 0 && (
+              <tr><td colSpan={7}>
+                <EmptyState icon={Receipt} title="No expenses yet" description="Add your first expense to start tracking your household spending." action="Add Expense" onAction={openAdd} />
+              </td></tr>
+            )}
             {expenses.map((exp, i) => {
               const monthly = exp.frequency === "once" ? exp.amount : toMonthly(exp.amount, exp.frequency);
               return (

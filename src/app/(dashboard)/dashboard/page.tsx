@@ -7,7 +7,11 @@ import {
   CreditCard,
   PiggyBank,
   ArrowUpRight,
+  Receipt,
+  Building2,
+  Plus,
 } from "lucide-react";
+import Link from "next/link";
 import {
   AreaChart,
   Area,
@@ -30,6 +34,7 @@ import {
   fmtPct,
 } from "@/lib/finance";
 import { useFinanceStore } from "@/store/finance-store";
+import { format } from "date-fns";
 
 const PIE_COLORS: Record<string, string> = {
   housing: "#3b82f6",
@@ -48,7 +53,9 @@ const PIE_COLORS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-  const { incomes, expenses, assets, debts } = useFinanceStore();
+  const { incomes, expenses, assets, debts, householdName, isAuthenticatedUser, isLoadedFromSupabase } = useFinanceStore();
+  const isEmpty = isAuthenticatedUser && isLoadedFromSupabase &&
+    incomes.length === 0 && expenses.length === 0 && assets.length === 0 && debts.length === 0;
 
   const summary = buildFinancialSummary(incomes, expenses, assets, debts);
   const netWorthHistory = buildNetWorthHistory(summary.totalAssets, summary.totalDebt);
@@ -67,13 +74,52 @@ export default function DashboardPage() {
     }))
     .sort((a, b) => b.value - a.value);
 
+  const subtitle = isAuthenticatedUser
+    ? (householdName ? `${householdName} · ` : "") + format(new Date(), "MMMM yyyy")
+    : "Demo · " + format(new Date(), "MMMM yyyy");
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Dashboard</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Jake & Sarah Henderson · May 2026</p>
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
       </div>
 
+      {isEmpty && (
+        <div className="rounded-xl border p-8" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+          <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Welcome to Family Ledger</h2>
+          <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
+            Add your financial data to get a complete picture of your household finances.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {[
+              { href: "/income", icon: TrendingUp, label: "Add income", desc: "Salaries, freelance, investments" },
+              { href: "/expenses", icon: Receipt, label: "Add expenses", desc: "Bills, subscriptions, spending" },
+              { href: "/assets", icon: Building2, label: "Add assets", desc: "Home, retirement, savings" },
+              { href: "/debts", icon: CreditCard, label: "Add debts", desc: "Mortgage, loans, credit cards" },
+            ].map(({ href, icon: Icon, label, desc }) => (
+              <Link
+                key={href}
+                href={href}
+                className="flex items-start gap-3 p-4 rounded-xl border transition-colors hover:border-[var(--accent-blue)]"
+                style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
+              >
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: "var(--accent-blue-dim)" }}>
+                  <Icon size={15} style={{ color: "var(--accent-blue)" }} />
+                </div>
+                <div>
+                  <p className="text-sm font-medium flex items-center gap-1" style={{ color: "var(--text-primary)" }}>
+                    <Plus size={12} />{label}
+                  </p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {!isEmpty && <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Monthly Income" value={fmt(summary.monthlyIncome)} sub="All sources combined" icon={TrendingUp} accent="green" trend="up" trendLabel="~$173k annual" />
         <StatCard title="Monthly Expenses" value={fmt(summary.monthlyExpenses)} sub="Fixed + variable" icon={TrendingDown} accent="red" trend="neutral" trendLabel="vs $12,500 budgeted" />
@@ -203,21 +249,26 @@ export default function DashboardPage() {
           <CardTitle>Active Debts</CardTitle>
           <CreditCard size={16} style={{ color: "var(--text-muted)" }} />
         </div>
-        <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
-          {debts.map((debt) => (
-            <div key={debt.id} className="py-3 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{debt.name}</p>
-                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{debt.interestRate}% APR · Min {fmt(debt.minimumPayment)}/mo</p>
+        {debts.length === 0 ? (
+          <p className="text-sm py-4 text-center" style={{ color: "var(--text-muted)" }}>No debts added yet.</p>
+        ) : (
+          <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+            {debts.map((debt) => (
+              <div key={debt.id} className="py-3 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{debt.name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{debt.interestRate}% APR · Min {fmt(debt.minimumPayment)}/mo</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(debt.balance)}</p>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>of {fmt(debt.originalBalance)}</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(debt.balance)}</p>
-                <p className="text-xs" style={{ color: "var(--text-muted)" }}>of {fmt(debt.originalBalance)}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
+      </>}
     </div>
   );
 }

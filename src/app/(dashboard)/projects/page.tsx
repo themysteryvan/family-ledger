@@ -5,6 +5,7 @@ import { FolderOpen, Plus, Pencil, Trash2 } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ProjectForm } from "@/components/forms/project-form";
 import { useFinanceStore } from "@/store/finance-store";
 import { fmt, fmtPct } from "@/lib/finance";
@@ -81,6 +82,11 @@ export default function ProjectsPage() {
         <StatCard title="Active Projects" value={String(active)} sub="In progress" accent="purple" />
       </div>
 
+      {projects.length === 0 ? (
+        <div className="rounded-xl border" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+          <EmptyState icon={FolderOpen} title="No projects yet" description="Plan home improvements, vacations, emergency funds, and other financial goals." action="New Project" onAction={openAdd} />
+        </div>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {projects.map((proj) => {
           const pct = proj.totalBudget > 0 ? (proj.amountSpent / proj.totalBudget) * 100 : 0;
@@ -168,6 +174,7 @@ export default function ProjectsPage() {
           );
         })}
       </div>
+      )}
 
       {showModal && (
         <Modal title={editItem ? "Edit Project" : "New Project"} onClose={() => { setShowModal(false); setEditItem(null); }}>
