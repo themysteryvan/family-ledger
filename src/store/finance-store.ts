@@ -27,6 +27,7 @@ interface FinanceStore {
 
   loadFromSupabase: (userId: string) => Promise<void>;
   clearSupabaseData: () => void;
+  updateHouseholdName: (name: string) => Promise<void>;
 
   addIncome: (item: Omit<Income, "id">) => void;
   updateIncome: (id: string, patch: Partial<Omit<Income, "id">>) => void;
@@ -124,6 +125,15 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
       debts: debtErr ? mockDebts : (debtRows as DebtRow[]).map(toDebt),
       projects: projectErr ? mockProjects : (projectRows as ProjectRow[]).map(toProject),
     });
+  },
+
+  async updateHouseholdName(name: string) {
+    set({ householdName: name });
+    const { householdId } = get();
+    if (householdId) {
+      const { error } = await createClient().from("households").update({ name }).eq("id", householdId);
+      if (error) console.error("[finance-store] Failed to update household name:", error);
+    }
   },
 
   clearSupabaseData() {
