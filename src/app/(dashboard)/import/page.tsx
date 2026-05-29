@@ -4,6 +4,8 @@ import { useState, useCallback, useRef } from "react";
 import { Upload, FileText, Sparkles, CheckCircle, AlertCircle, X, Loader2 } from "lucide-react";
 import { useFinanceStore } from "@/store/finance-store";
 import { fmt } from "@/lib/finance";
+import { CategorySelect } from "@/components/ui/category-select";
+import { EXPENSE_CATEGORIES } from "@/components/forms/expense-form";
 import type { Expense } from "@/types";
 
 const CATEGORY_MAP: Record<string, Expense["category"]> = {
@@ -23,19 +25,6 @@ const CATEGORY_MAP: Record<string, Expense["category"]> = {
 
 const ESSENTIAL_CATEGORIES = new Set<Expense["category"]>(["housing", "utilities", "food", "healthcare", "insurance"]);
 
-const DISPLAY_CATEGORIES: { value: Expense["category"]; label: string }[] = [
-  { value: "housing", label: "Housing" },
-  { value: "utilities", label: "Utilities" },
-  { value: "food", label: "Food" },
-  { value: "transport", label: "Transport" },
-  { value: "education", label: "Kids / Education" },
-  { value: "healthcare", label: "Health" },
-  { value: "insurance", label: "Insurance" },
-  { value: "entertainment", label: "Entertainment" },
-  { value: "personal", label: "Personal" },
-  { value: "savings", label: "Savings" },
-  { value: "other", label: "Other" },
-];
 
 interface ParsedRow {
   id: string;
@@ -416,17 +405,12 @@ export default function ImportPage() {
                       <p className="truncate font-medium" style={{ color: "var(--text-primary)" }}>{row.description}</p>
                     </td>
                     <td className="px-4 py-2.5 font-semibold whitespace-nowrap" style={{ color: "var(--accent-red)" }}>{fmt(row.amount)}</td>
-                    <td className="px-4 py-2.5">
-                      <select
+                    <td className="px-4 py-2.5 min-w-[160px]">
+                      <CategorySelect
                         value={row.category}
-                        onChange={(e) => updateRow(row.id, { category: e.target.value as Expense["category"] })}
-                        className="text-xs rounded-lg px-2 py-1.5 outline-none"
-                        style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
-                      >
-                        {DISPLAY_CATEGORIES.map((c) => (
-                          <option key={c.value} value={c.value}>{c.label}</option>
-                        ))}
-                      </select>
+                        options={EXPENSE_CATEGORIES}
+                        onChange={(v) => updateRow(row.id, { category: v as Expense["category"] })}
+                      />
                     </td>
                     <td className="px-4 py-2.5">
                       {row.aiCategory ? (

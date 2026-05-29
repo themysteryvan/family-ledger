@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Expense, FrequencyType } from "@/types";
 import { Field, Input, Select, Textarea, Checkbox, FormActions } from "@/components/ui/form-field";
+import { CategorySelect } from "@/components/ui/category-select";
 
 interface Props {
   initial?: Expense;
@@ -20,7 +21,7 @@ const FREQUENCIES: { value: FrequencyType; label: string }[] = [
   { value: "once", label: "One-time" },
 ];
 
-const CATEGORIES: { value: Expense["category"]; label: string }[] = [
+export const EXPENSE_CATEGORIES: { value: string; label: string }[] = [
   { value: "housing", label: "Housing" },
   { value: "utilities", label: "Utilities" },
   { value: "food", label: "Food & Dining" },
@@ -38,11 +39,19 @@ const CATEGORIES: { value: Expense["category"]; label: string }[] = [
 ];
 
 export function ExpenseForm({ initial, onSave, onClose }: Props) {
-  const [f, setF] = useState({
+  const [f, setF] = useState<{
+    name: string;
+    amount: string;
+    frequency: FrequencyType;
+    category: string;
+    isFixed: boolean;
+    isEssential: boolean;
+    notes: string;
+  }>({
     name: initial?.name ?? "",
     amount: initial?.amount != null ? String(initial.amount) : "",
-    frequency: initial?.frequency ?? "monthly" as FrequencyType,
-    category: initial?.category ?? "housing" as Expense["category"],
+    frequency: initial?.frequency ?? "monthly",
+    category: initial?.category ?? "housing",
     isFixed: initial?.isFixed ?? true,
     isEssential: initial?.isEssential ?? true,
     notes: initial?.notes ?? "",
@@ -57,7 +66,7 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
       name: f.name.trim(),
       amount: parseFloat(f.amount) || 0,
       frequency: f.frequency,
-      category: f.category,
+      category: (f.category.trim() || "other") as Expense["category"],
       isFixed: f.isFixed,
       isEssential: f.isEssential,
       notes: f.notes.trim() || undefined,
@@ -94,38 +103,25 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
             onChange={(e) => set("frequency", e.target.value as FrequencyType)}
           >
             {FREQUENCIES.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
+              <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </Select>
         </Field>
       </div>
 
       <Field label="Category">
-        <Select
+        <CategorySelect
           value={f.category}
-          onChange={(e) => set("category", e.target.value as Expense["category"])}
-        >
-          {CATEGORIES.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </Select>
+          options={EXPENSE_CATEGORIES}
+          onChange={(v) => set("category", v)}
+          selectStyle={{ padding: "0.5rem 0.75rem", fontSize: "0.875rem" }}
+          inputStyle={{ padding: "0.5rem 0.75rem", fontSize: "0.875rem" }}
+        />
       </Field>
 
       <div className="flex gap-6">
-        <Checkbox
-          label="Fixed amount"
-          checked={f.isFixed}
-          onChange={(v) => set("isFixed", v)}
-        />
-        <Checkbox
-          label="Essential"
-          checked={f.isEssential}
-          onChange={(v) => set("isEssential", v)}
-        />
+        <Checkbox label="Fixed amount" checked={f.isFixed} onChange={(v) => set("isFixed", v)} />
+        <Checkbox label="Essential" checked={f.isEssential} onChange={(v) => set("isEssential", v)} />
       </div>
 
       <Field label="Notes (optional)">
