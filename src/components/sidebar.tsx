@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { useFinanceStore } from "@/store/finance-store";
 
 const navItems = [
   { label: "Advisor", href: "/advisor", icon: Sparkles },
@@ -46,6 +47,7 @@ export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const householdName = useFinanceStore((s) => s.householdName);
 
   useEffect(() => {
     const supabase = createClient();
@@ -79,11 +81,24 @@ export function Sidebar() {
         </span>
       </div>
 
-      {/* Family badge */}
+      {/* Household badge */}
       <div className="px-4 py-3">
         <div className="rounded-lg px-3 py-2" style={{ background: "var(--bg-elevated)" }}>
-          <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Henderson Family</p>
-          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Jake & Sarah</p>
+          {userEmail ? (
+            <>
+              <p className="text-xs font-medium truncate" style={{ color: "var(--text-secondary)" }}>
+                {householdName ?? userEmail}
+              </p>
+              {householdName && (
+                <p className="text-xs mt-0.5 truncate" style={{ color: "var(--text-muted)" }}>{userEmail}</p>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Demo Mode</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Sign in to save data</p>
+            </>
+          )}
         </div>
       </div>
 

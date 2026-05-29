@@ -22,6 +22,7 @@ interface FinanceStore {
 
   // Auth / sync state
   householdId: string | null;
+  householdName: string | null;
   isLoadedFromSupabase: boolean;
 
   loadFromSupabase: (userId: string) => Promise<void>;
@@ -56,6 +57,7 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
   projects: mockProjects,
 
   householdId: null,
+  householdName: null,
   isLoadedFromSupabase: false,
 
   // ── Load from Supabase ────────────────────────────────────────────────────
@@ -64,18 +66,23 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
     const supabase = createClient();
 
     // Get or create household
-    let { data: household } = await supabase
+    let { data: household, error: householdErr } = await supabase
       .from("households")
-      .select("id")
+      .select("id, name")
       .eq("user_id", userId)
       .single();
 
+    if (householdErr && householdErr.code !== "PGRST116") {
+      console.error("[finance-store] Failed to fetch household:", householdErr);
+    }
+
     if (!household) {
-      const { data: created } = await supabase
+      const { data: created, error: createErr } = await supabase
         .from("households")
         .insert({ user_id: userId, name: "My Household" })
-        .select("id")
+        .select("id, name")
         .single();
+      if (createErr) console.error("[finance-store] Failed to create household:", createErr);
       household = created;
     }
 
@@ -83,11 +90,11 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
     const householdId = household.id;
 
     const [
-      { data: incomeRows },
-      { data: expenseRows },
-      { data: assetRows },
-      { data: debtRows },
-      { data: projectRows },
+      { data: incomeRows, error: incomeErr },
+      { data: expenseRows, error: expenseErr },
+      { data: assetRows, error: assetErr },
+      { data: debtRows, error: debtErr },
+      { data: projectRows, error: projectErr },
     ] = await Promise.all([
       supabase.from("incomes").select("*").eq("household_id", householdId),
       supabase.from("expenses").select("*").eq("household_id", householdId),
@@ -99,20 +106,30 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
         .eq("household_id", householdId),
     ]);
 
+    if (incomeErr) console.error("[finance-store] incomes fetch error:", incomeErr);
+    if (expenseErr) console.error("[finance-store] expenses fetch error:", expenseErr);
+    if (assetErr) console.error("[finance-store] assets fetch error:", assetErr);
+    if (debtErr) console.error("[finance-store] debts fetch error:", debtErr);
+    if (projectErr) console.error("[finance-store] projects fetch error:", projectErr);
+
+    // Always replace mock data with real data once authenticated.
+    // Use empty array for new users (no rows yet), fall back to mock only on fetch error.
     set({
       householdId,
+      householdName: (household as { id: string; name?: string }).name ?? null,
       isLoadedFromSupabase: true,
-      incomes: incomeRows ? (incomeRows as IncomeRow[]).map(toIncome) : mockIncomes,
-      expenses: expenseRows ? (expenseRows as ExpenseRow[]).map(toExpense) : mockExpenses,
-      assets: assetRows ? (assetRows as AssetRow[]).map(toAsset) : mockAssets,
-      debts: debtRows ? (debtRows as DebtRow[]).map(toDebt) : mockDebts,
-      projects: projectRows ? (projectRows as ProjectRow[]).map(toProject) : mockProjects,
+      incomes: incomeErr ? mockIncomes : (incomeRows as IncomeRow[]).map(toIncome),
+      expenses: expenseErr ? mockExpenses : (expenseRows as ExpenseRow[]).map(toExpense),
+      assets: assetErr ? mockAssets : (assetRows as AssetRow[]).map(toAsset),
+      debts: debtErr ? mockDebts : (debtRows as DebtRow[]).map(toDebt),
+      projects: projectErr ? mockProjects : (projectRows as ProjectRow[]).map(toProject),
     });
   },
 
   clearSupabaseData() {
     set({
       householdId: null,
+      householdName: null,
       isLoadedFromSupabase: false,
       incomes: mockIncomes,
       expenses: mockExpenses,
