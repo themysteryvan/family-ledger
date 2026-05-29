@@ -129,7 +129,7 @@ export default function ExpensesPage() {
           </thead>
           <tbody>
             {expenses.map((exp, i) => {
-              const monthly = toMonthly(exp.amount, exp.frequency);
+              const monthly = exp.frequency === "once" ? exp.amount : toMonthly(exp.amount, exp.frequency);
               return (
                 <tr key={exp.id} style={{ borderBottom: i < expenses.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
                   <td className="px-5 py-3 font-medium" style={{ color: "var(--text-primary)" }}>{exp.name}</td>
@@ -140,7 +140,10 @@ export default function ExpensesPage() {
                   </td>
                   <td className="px-5 py-3" style={{ color: "var(--text-secondary)" }}>{fmt(exp.amount)}</td>
                   <td className="px-5 py-3 capitalize" style={{ color: "var(--text-secondary)" }}>{exp.frequency}</td>
-                  <td className="px-5 py-3 font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(monthly)}</td>
+                  <td className="px-5 py-3 font-semibold" style={{ color: "var(--accent-red)" }}>
+                    {fmt(monthly)}
+                    {exp.frequency === "once" && <span className="ml-1 text-xs font-normal" style={{ color: "var(--text-muted)" }}>once</span>}
+                  </td>
                   <td className="px-5 py-3">
                     <div className="flex gap-1.5">
                       <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: exp.isFixed ? "var(--accent-blue-dim)" : "var(--bg-muted)", color: exp.isFixed ? "var(--accent-blue)" : "var(--text-muted)" }}>
