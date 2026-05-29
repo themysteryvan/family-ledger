@@ -6,6 +6,22 @@ export interface ParsedTransaction {
   amount: number;
 }
 
+const PROMPT = `You are a financial data extraction assistant. Extract every transaction from this bank or credit card statement.
+
+Return ONLY a JSON array — no explanation, no markdown fences. Each element must have exactly these fields:
+- "date": the transaction date as a string (e.g. "2026-05-01"), or "" if not found
+- "description": the merchant or transaction description
+- "amount": the transaction amount as a positive number (expenses only)
+
+Rules:
+- Skip transfers between accounts, payments to the card itself, and credits/refunds
+- Skip opening/closing balances
+- If a row has both debit and credit columns, only include rows where the debit/expense column is populated
+- Amounts must be positive numbers (no minus signs)
+- No duplicates
+
+Return only the JSON array, starting with [ and ending with ].`;
+
 export async function POST(req: NextRequest) {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -18,43 +34,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  // Dynamic import avoids pdf-parse reading test files at module load time
-  const { default: pdfParse } = await import("pdf-parse") as unknown as { default: (buf: Buffer) => Promise<{ text: string }> };
-  const buffer = Buffer.from(await file.arrayBuffer());
-
-  let pdfText: string;
-  try {
-    const { text } = await pdfParse(buffer);
-    pdfText = text;
-  } catch {
-    return NextResponse.json({ error: "Failed to read PDF. Make sure it is a text-based PDF, not a scanned image." }, { status: 422 });
-  }
-
-  if (!pdfText.trim()) {
-    return NextResponse.json({ error: "No text found in PDF. It may be a scanned image — please use a text-based PDF or CSV instead." }, { status: 422 });
-  }
-
-  // Truncate to avoid exceeding token limits (~120k chars ≈ 30k tokens)
-  const truncated = pdfText.slice(0, 120_000);
-
-  const prompt = `You are a financial data extraction assistant. Extract every transaction from the bank or credit card statement text below.
-
-Return ONLY a JSON array — no explanation, no markdown. Each element must have exactly these fields:
-- "date": the transaction date as a string (e.g. "2026-05-01"), or "" if not found
-- "description": the merchant or transaction description
-- "amount": the transaction amount as a positive number (expenses only — skip deposits/credits/payments)
-
-Rules:
-- Skip transfers between accounts, payments to the card itself, and credits/refunds
-- Skip opening/closing balances, interest charges, and fees — unless they are clearly a merchant charge
-- If a row has both a debit and credit column, only include rows where the debit/expense column is populated
-- Amounts should be positive numbers (no minus signs)
-- Do not include duplicates
-
-Statement text:
-${truncated}
-
-Return only the JSON array, starting with [ and ending with ].`;
+  // Encode PDF as base64 and send directly to Claude — no pdf-parse needed
+  const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -66,7 +47,25 @@ Return only the JSON array, starting with [ and ending with ].`;
     body: JSON.stringify({
       model: "claude-sonnet-4-5",
       max_tokens: 4096,
-      messages: [{ role: "user", content: prompt }],
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: {
+                type: "base64",
+                media_type: "application/pdf",
+                data: base64,
+              },
+            },
+            {
+              type: "text",
+              text: PROMPT,
+            },
+          ],
+        },
+      ],
     }),
   });
 
@@ -98,7 +97,7 @@ Return only the JSON array, starting with [ and ending with ].`;
   }
 
   if (transactions.length === 0) {
-    return NextResponse.json({ error: "No transactions found in this PDF. It may not be a bank statement, or it may be a scanned image." }, { status: 422 });
+    return NextResponse.json({ error: "No transactions found in this PDF. Make sure it is a bank or credit card statement." }, { status: 422 });
   }
 
   return NextResponse.json({ transactions });
