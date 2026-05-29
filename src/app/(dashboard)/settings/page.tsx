@@ -19,6 +19,11 @@ export default function SettingsPage() {
   const [emailStatus, setEmailStatus] = useState<"idle" | "pending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState("");
 
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordStatus, setPasswordStatus] = useState<"idle" | "pending" | "saved" | "error">("idle");
+  const [passwordError, setPasswordError] = useState("");
+
   useEffect(() => {
     createClient().auth.getUser().then(({ data: { user } }) => {
       setUserEmail(user?.email ?? null);
@@ -37,6 +42,32 @@ export default function SettingsPage() {
     await updateHouseholdName(trimmed);
     setNameSaved(true);
     setTimeout(() => setNameSaved(false), 2000);
+  }
+
+  async function handleSavePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus("error");
+      setPasswordError("Passwords don't match.");
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordStatus("error");
+      setPasswordError("Password must be at least 6 characters.");
+      return;
+    }
+    setPasswordStatus("pending");
+    setPasswordError("");
+    const { error } = await createClient().auth.updateUser({ password: newPassword });
+    if (error) {
+      setPasswordStatus("error");
+      setPasswordError(error.message);
+    } else {
+      setPasswordStatus("saved");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPasswordStatus("idle"), 3000);
+    }
   }
 
   async function handleSaveEmail(e: React.FormEvent) {
@@ -140,6 +171,57 @@ export default function SettingsPage() {
             {emailStatus === "error" && (
               <p className="mt-2 text-xs" style={{ color: "var(--accent-red)" }}>{emailError}</p>
             )}
+          </div>
+
+          {/* Password */}
+          <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+            <CardTitle>Password</CardTitle>
+            <form onSubmit={handleSavePassword} className="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>New password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => { setNewPassword(e.target.value); setPasswordStatus("idle"); setPasswordError(""); }}
+                  placeholder="Min. 6 characters"
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium mb-1.5" style={{ color: "var(--text-muted)" }}>Confirm password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => { setConfirmPassword(e.target.value); setPasswordStatus("idle"); setPasswordError(""); }}
+                  placeholder="Repeat new password"
+                  className="w-full px-3 py-2 rounded-lg text-sm outline-none"
+                  style={inputStyle}
+                />
+              </div>
+              <div className="lg:col-span-2 flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={passwordStatus === "pending" || !newPassword || !confirmPassword}
+                  className="px-4 py-2 rounded-lg text-sm font-medium"
+                  style={{
+                    background: "var(--accent-blue)",
+                    color: "#fff",
+                    opacity: (passwordStatus === "pending" || !newPassword || !confirmPassword) ? 0.5 : 1,
+                  }}
+                >
+                  {passwordStatus === "pending" ? "Saving…" : "Update password"}
+                </button>
+                {passwordStatus === "saved" && (
+                  <span className="flex items-center gap-1 text-sm" style={{ color: "var(--accent-green)" }}>
+                    <Check size={14} /> Password updated
+                  </span>
+                )}
+                {passwordStatus === "error" && (
+                  <span className="text-sm" style={{ color: "var(--accent-red)" }}>{passwordError}</span>
+                )}
+              </div>
+            </form>
           </div>
         </>
       )}
