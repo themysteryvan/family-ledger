@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import type { Income, Expense, Asset, Debt, Project } from "@/types";
-import { mockIncomes, mockExpenses, mockAssets, mockDebts, mockProjects } from "@/lib/mock-data";
 import { createClient } from "@/lib/supabase/client";
 import {
   toIncome, toExpense, toAsset, toDebt, toProject,
@@ -125,17 +124,15 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
     if (debtErr) console.error("[finance-store] debts fetch error:", debtErr);
     if (projectErr) console.error("[finance-store] projects fetch error:", projectErr);
 
-    // Always replace mock data with real data once authenticated.
-    // Use empty array for new users (no rows yet), fall back to mock only on fetch error.
     set({
       householdId,
       householdName: (household as { id: string; name?: string }).name ?? null,
       isLoadedFromSupabase: true,
-      incomes: incomeErr ? mockIncomes : (incomeRows as IncomeRow[]).map(toIncome),
-      expenses: expenseErr ? mockExpenses : (expenseRows as ExpenseRow[]).map(toExpense),
-      assets: assetErr ? mockAssets : (assetRows as AssetRow[]).map(toAsset),
-      debts: debtErr ? mockDebts : (debtRows as DebtRow[]).map(toDebt),
-      projects: projectErr ? mockProjects : (projectRows as ProjectRow[]).map(toProject),
+      incomes: incomeErr ? [] : (incomeRows as IncomeRow[]).map(toIncome),
+      expenses: expenseErr ? [] : (expenseRows as ExpenseRow[]).map(toExpense),
+      assets: assetErr ? [] : (assetRows as AssetRow[]).map(toAsset),
+      debts: debtErr ? [] : (debtRows as DebtRow[]).map(toDebt),
+      projects: projectErr ? [] : (projectRows as ProjectRow[]).map(toProject),
     });
   },
 
