@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { Income, Expense, Asset, Debt, Project } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import {
@@ -50,7 +51,9 @@ interface FinanceStore {
   deleteProject: (id: string) => void;
 }
 
-export const useFinanceStore = create<FinanceStore>((set, get) => ({
+export const useFinanceStore = create<FinanceStore>()(
+  persist(
+    (set, get) => ({
   incomes: [],
   expenses: [],
   assets: [],
@@ -309,4 +312,19 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
       createClient().from("projects").delete().eq("id", id).then();
     }
   },
-}));
+    }),
+    {
+      name: "family-ledger-store",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        incomes: state.incomes,
+        expenses: state.expenses,
+        assets: state.assets,
+        debts: state.debts,
+        projects: state.projects,
+        householdId: state.householdId,
+        householdName: state.householdName,
+      }),
+    }
+  )
+);
