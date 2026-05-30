@@ -34,7 +34,7 @@ export function IncomeForm({ initial, onSave, onClose }: Props) {
     amount: initial?.amount != null ? String(initial.amount) : "",
     frequency: initial?.frequency ?? "monthly" as FrequencyType,
     category: initial?.category ?? "salary" as Income["category"],
-    owner: initial?.owner ?? "Jake",
+    owner: initial?.owner ?? "",
     isActive: initial?.isActive ?? true,
     startDate: initial?.startDate ?? "",
     notes: initial?.notes ?? "",
@@ -64,7 +64,7 @@ export function IncomeForm({ initial, onSave, onClose }: Props) {
         <Input
           value={f.name}
           onChange={(e) => set("name", e.target.value)}
-          placeholder="e.g. Jake Salary — Senior PM"
+          placeholder="e.g. Annual Salary — Senior PM"
           required
         />
       </Field>
@@ -109,14 +109,11 @@ export function IncomeForm({ initial, onSave, onClose }: Props) {
           </Select>
         </Field>
         <Field label="Owner">
-          <Select
+          <Input
             value={f.owner}
             onChange={(e) => set("owner", e.target.value)}
-          >
-            <option value="Jake">Jake</option>
-            <option value="Sarah">Sarah</option>
-            <option value="Joint">Joint</option>
-          </Select>
+            placeholder="e.g. Alex, Joint"
+          />
         </Field>
       </div>
 

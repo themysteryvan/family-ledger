@@ -111,8 +111,9 @@ export default function IncomePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Monthly Income" value={fmt(totalMonthly)} icon={TrendingUp} accent="green" trend="up" trendLabel="Active sources" />
         <StatCard title="Annual Income" value={fmt(totalAnnual)} accent="blue" />
-        <StatCard title="Jake" value={fmt(ownerTotals["Jake"] || 0)} sub="per month" accent="purple" />
-        <StatCard title="Sarah" value={fmt(ownerTotals["Sarah"] || 0)} sub="per month" accent="amber" />
+        {Object.entries(ownerTotals).slice(0, 2).map(([owner, total], i) => (
+          <StatCard key={owner} title={owner} value={fmt(total)} sub="per month" accent={i === 0 ? "purple" : "amber"} />
+        ))}
       </div>
 
       {/* Charts — only shown when there is data */}
