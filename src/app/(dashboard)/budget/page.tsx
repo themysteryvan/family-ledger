@@ -4,152 +4,79 @@ import { Target } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { monthlyIncome, monthlyExpenses, toMonthly, fmt, fmtPct } from "@/lib/finance";
-import { mockIncomes, mockExpenses } from "@/lib/mock-data";
+import { useFinanceStore } from "@/store/finance-store";
+import { EmptyState } from "@/components/ui/empty-state";
 
-const income = monthlyIncome(mockIncomes);
-const actual = monthlyExpenses(mockExpenses);
-
-const budgetCategories = [
-  { name: "Housing",       budgeted: 3_700, actual: 3_600 },
-  { name: "Kids & Edu",    budgeted: 2_200, actual: 2_110 },
-  { name: "Savings",       budgeted: 1_800, actual: 1_733 },
-  { name: "Food & Dining", budgeted: 1_500, actual: 1_400 },
-  { name: "Transport",     budgeted: 1_050, actual: 975  },
-  { name: "Healthcare",    budgeted:   800, actual: 825  },
-  { name: "Utilities",     budgeted:   480, actual: 460  },
-  { name: "Entertainment", budgeted:   400, actual: 329  },
-  { name: "Insurance",     budgeted:   280, actual: 230  },
-  { name: "Personal",      budgeted:   350, actual: 405  },
-  { name: "Debt Payments", budgeted:   300, actual: 298  },
-];
-
-const totalBudgeted = budgetCategories.reduce((s, c) => s + c.budgeted, 0);
+const categoryLabels: Record<string, string> = {
+  housing: "Housing", utilities: "Utilities", food: "Food & Dining",
+  transport: "Transport", insurance: "Insurance", healthcare: "Healthcare",
+  education: "Education / Kids", entertainment: "Entertainment",
+  subscriptions: "Subscriptions", clothing: "Clothing", personal: "Personal",
+  savings: "Savings", debt: "Debt Payments", other: "Other",
+};
 
 export default function BudgetPage() {
+  const incomes = useFinanceStore((s) => s.incomes);
+  const expenses = useFinanceStore((s) => s.expenses);
+
+  const income = monthlyIncome(incomes);
+  const actual = monthlyExpenses(expenses);
+
+  // Group actual spending by category from real expense data
+  const categoryTotals = expenses.reduce((acc, e) => {
+    const m = toMonthly(e.amount, e.frequency);
+    acc[e.category] = (acc[e.category] || 0) + m;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const categories = Object.entries(categoryTotals)
+    .map(([cat, amount]) => ({ name: categoryLabels[cat] ?? cat, actual: Math.round(amount), pct: income > 0 ? (amount / income) * 100 : 0 }))
+    .sort((a, b) => b.actual - a.actual);
+
   return (
     <div className="space-y-6">
       <div>
-        <h1
-          className="text-2xl font-semibold tracking-tight"
-          style={{ color: "var(--text-primary)" }}
-        >
-          Budget
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Budgeted vs actual spending · May 2026
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Budget</h1>
+        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Spending breakdown by category</p>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Monthly Income"
-          value={fmt(income)}
-          icon={Target}
-          accent="green"
-        />
-        <StatCard
-          title="Total Budgeted"
-          value={fmt(totalBudgeted)}
-          accent="blue"
-        />
-        <StatCard
-          title="Actual Spending"
-          value={fmt(actual)}
-          accent={actual > totalBudgeted ? "red" : "green"}
-          trend={actual > totalBudgeted ? "down" : "up"}
-          trendLabel={
-            actual > totalBudgeted
-              ? fmt(actual - totalBudgeted) + " over"
-              : fmt(totalBudgeted - actual) + " under"
-          }
-        />
-        <StatCard
-          title="Remaining"
-          value={fmt(income - actual)}
-          sub="Unallocated cash flow"
-          accent="purple"
-        />
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+        <StatCard title="Monthly Income" value={fmt(income)} icon={Target} accent="green" />
+        <StatCard title="Total Spending" value={fmt(actual)} accent={actual > income ? "red" : "blue"} />
+        <StatCard title="Remaining" value={fmt(income - actual)} sub="Unallocated cash flow" accent={income - actual >= 0 ? "purple" : "red"} />
       </div>
 
-      <div
-        className="rounded-xl border overflow-hidden"
-        style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
-      >
+      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
         <div className="px-5 py-4 border-b" style={{ borderColor: "var(--border)" }}>
-          <CardTitle>Budget vs Actual by Category</CardTitle>
+          <CardTitle>Spending by Category</CardTitle>
         </div>
-        <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
-          {budgetCategories.map((cat) => {
-            const variance = cat.budgeted - cat.actual;
-            const overBudget = variance < 0;
-            const pctUsed = Math.min((cat.actual / cat.budgeted) * 100, 120);
-            return (
+
+        {categories.length === 0 ? (
+          <EmptyState icon={Target} title="No expenses yet" description="Add expenses to see your spending breakdown by category." />
+        ) : (
+          <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+            {categories.map((cat) => (
               <div key={cat.name} className="px-5 py-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span
-                    className="text-sm font-medium"
-                    style={{ color: "var(--text-primary)" }}
-                  >
-                    {cat.name}
-                  </span>
+                  <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{cat.name}</span>
                   <div className="flex items-center gap-4 text-sm">
-                    <span style={{ color: "var(--text-muted)" }}>
-                      Budgeted: {fmt(cat.budgeted)}
-                    </span>
-                    <span
-                      className="font-semibold"
-                      style={{
-                        color: overBudget
-                          ? "var(--accent-red)"
-                          : "var(--accent-green)",
-                      }}
-                    >
-                      {overBudget ? "+" : "−"}
-                      {fmt(Math.abs(variance))} {overBudget ? "over" : "saved"}
-                    </span>
-                    <span
-                      className="font-semibold w-20 text-right"
-                      style={{ color: "var(--text-primary)" }}
-                    >
-                      {fmt(cat.actual)}
-                    </span>
+                    <span style={{ color: "var(--text-muted)" }}>{fmtPct(cat.pct, 0)} of income</span>
+                    <span className="font-semibold w-20 text-right" style={{ color: "var(--text-primary)" }}>{fmt(cat.actual)}</span>
                   </div>
                 </div>
-                <div
-                  className="h-2 rounded-full overflow-hidden relative"
-                  style={{ background: "var(--bg-muted)" }}
-                >
+                <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
                   <div
                     className="h-full rounded-full transition-all"
                     style={{
-                      width: `${Math.min(pctUsed, 100)}%`,
-                      background: overBudget
-                        ? "var(--accent-red)"
-                        : pctUsed > 85
-                          ? "var(--accent-amber)"
-                          : "var(--accent-green)",
-                    }}
-                  />
-                  {/* Budget marker */}
-                  <div
-                    className="absolute top-0 bottom-0 w-0.5"
-                    style={{
-                      left: "83.33%",
-                      background: "var(--text-muted)",
-                      opacity: 0.5,
+                      width: `${Math.min(cat.pct, 100)}%`,
+                      background: cat.pct > 30 ? "var(--accent-red)" : cat.pct > 15 ? "var(--accent-amber)" : "var(--accent-green)",
                     }}
                   />
                 </div>
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "var(--text-muted)" }}
-                >
-                  {fmtPct(pctUsed, 0)} of budget used
-                </p>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
