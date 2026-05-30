@@ -109,6 +109,27 @@ export interface Project {
   notes?: string;
 }
 
+export type RetirementAccountType =
+  | "401k"
+  | "roth_401k"
+  | "ira"
+  | "roth_ira"
+  | "403b"
+  | "sep_ira"
+  | "pension";
+
+export interface RetirementAccount {
+  id: string;
+  name: string;
+  type: RetirementAccountType;
+  owner: string;
+  balance: number;
+  contributionYtd?: number;
+  employerMatchPct?: number;
+  annualContributionLimit?: number;
+  notes?: string;
+}
+
 export interface NetWorthSnapshot {
   date: string;
   totalAssets: number;

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Income, Expense, Asset, Debt, Project } from "@/types";
+import type { Income, Expense, Asset, Debt, Project, RetirementAccount } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import {
   toIncome, toExpense, toAsset, toDebt, toProject,
@@ -19,6 +19,7 @@ interface FinanceStore {
   assets: Asset[];
   debts: Debt[];
   projects: Project[];
+  retirementAccounts: RetirementAccount[];
 
   // Auth / sync state
   householdId: string | null;
@@ -49,6 +50,10 @@ interface FinanceStore {
   addProject: (item: Omit<Project, "id">) => void;
   updateProject: (id: string, patch: Partial<Omit<Project, "id">>) => void;
   deleteProject: (id: string) => void;
+
+  addRetirementAccount: (item: Omit<RetirementAccount, "id">) => void;
+  updateRetirementAccount: (id: string, patch: Partial<Omit<RetirementAccount, "id">>) => void;
+  deleteRetirementAccount: (id: string) => void;
 }
 
 export const useFinanceStore = create<FinanceStore>()(
@@ -59,6 +64,7 @@ export const useFinanceStore = create<FinanceStore>()(
   assets: [],
   debts: [],
   projects: [],
+  retirementAccounts: [],
 
   householdId: null,
   householdName: null,
@@ -76,6 +82,7 @@ export const useFinanceStore = create<FinanceStore>()(
       assets: [],
       debts: [],
       projects: [],
+      retirementAccounts: [],
     });
 
     const supabase = createClient();
@@ -159,6 +166,7 @@ export const useFinanceStore = create<FinanceStore>()(
       assets: [],
       debts: [],
       projects: [],
+      retirementAccounts: [],
     });
   },
 
@@ -312,6 +320,23 @@ export const useFinanceStore = create<FinanceStore>()(
       createClient().from("projects").delete().eq("id", id).then();
     }
   },
+
+  // ── Retirement Accounts ───────────────────────────────────────────────────
+
+  addRetirementAccount(item) {
+    const id = uid();
+    set((s) => ({ retirementAccounts: [...s.retirementAccounts, { ...item, id }] }));
+  },
+
+  updateRetirementAccount(id, patch) {
+    set((s) => ({
+      retirementAccounts: s.retirementAccounts.map((a) => (a.id === id ? { ...a, ...patch } : a)),
+    }));
+  },
+
+  deleteRetirementAccount(id) {
+    set((s) => ({ retirementAccounts: s.retirementAccounts.filter((a) => a.id !== id) }));
+  },
     }),
     {
       name: "family-ledger-store",
@@ -322,6 +347,7 @@ export const useFinanceStore = create<FinanceStore>()(
         assets: state.assets,
         debts: state.debts,
         projects: state.projects,
+        retirementAccounts: state.retirementAccounts,
         householdId: state.householdId,
         householdName: state.householdName,
       }),

@@ -19,6 +19,7 @@ import {
   Wallet,
   Upload,
   Sparkles,
+  PiggyBank,
   LogIn,
   LogOut,
 } from "lucide-react";
@@ -37,6 +38,7 @@ const navItems = [
   { label: "Debts", href: "/debts", icon: CreditCard },
   { label: "Net Worth", href: "/net-worth", icon: BarChart3 },
   { label: "Projects", href: "/projects", icon: FolderOpen },
+  { label: "Retirement", href: "/retirement", icon: PiggyBank },
   { label: "Forecasts", href: "/forecasts", icon: LineChart },
   { label: "Reports", href: "/reports", icon: FileText },
   { label: "Health Score", href: "/health-score", icon: HeartPulse },
