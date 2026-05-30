@@ -32,7 +32,10 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function DebtsPage() {
-  const { debts, addDebt, updateDebt, deleteDebt } = useFinanceStore();
+  const debts = useFinanceStore((s) => s.debts);
+  const addDebt = useFinanceStore((s) => s.addDebt);
+  const updateDebt = useFinanceStore((s) => s.updateDebt);
+  const deleteDebt = useFinanceStore((s) => s.deleteDebt);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Debt | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);

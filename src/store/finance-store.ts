@@ -154,11 +154,11 @@ export const useFinanceStore = create<FinanceStore>((set, get) => ({
       householdName: null,
       isLoadedFromSupabase: false,
       isAuthenticatedUser: false,
-      incomes: mockIncomes,
-      expenses: mockExpenses,
-      assets: mockAssets,
-      debts: mockDebts,
-      projects: mockProjects,
+      incomes: [],
+      expenses: [],
+      assets: [],
+      debts: [],
+      projects: [],
     });
   },
 

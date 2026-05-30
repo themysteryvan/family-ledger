@@ -35,7 +35,10 @@ const categoryIcons: Record<string, string> = {
 };
 
 export default function ProjectsPage() {
-  const { projects, addProject, updateProject, deleteProject } = useFinanceStore();
+  const projects = useFinanceStore((s) => s.projects);
+  const addProject = useFinanceStore((s) => s.addProject);
+  const updateProject = useFinanceStore((s) => s.updateProject);
+  const deleteProject = useFinanceStore((s) => s.deleteProject);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Project | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);

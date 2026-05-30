@@ -38,7 +38,10 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function ExpensesPage() {
-  const { expenses, addExpense, updateExpense, deleteExpense } = useFinanceStore();
+  const expenses = useFinanceStore((s) => s.expenses);
+  const addExpense = useFinanceStore((s) => s.addExpense);
+  const updateExpense = useFinanceStore((s) => s.updateExpense);
+  const deleteExpense = useFinanceStore((s) => s.deleteExpense);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Expense | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);

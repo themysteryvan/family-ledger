@@ -40,7 +40,10 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function AssetsPage() {
-  const { assets, addAsset, updateAsset, deleteAsset } = useFinanceStore();
+  const assets = useFinanceStore((s) => s.assets);
+  const addAsset = useFinanceStore((s) => s.addAsset);
+  const updateAsset = useFinanceStore((s) => s.updateAsset);
+  const deleteAsset = useFinanceStore((s) => s.deleteAsset);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Asset | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);

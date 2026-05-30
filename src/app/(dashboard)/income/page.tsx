@@ -37,7 +37,10 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function IncomePage() {
-  const { incomes, addIncome, updateIncome, deleteIncome } = useFinanceStore();
+  const incomes = useFinanceStore((s) => s.incomes);
+  const addIncome = useFinanceStore((s) => s.addIncome);
+  const updateIncome = useFinanceStore((s) => s.updateIncome);
+  const deleteIncome = useFinanceStore((s) => s.deleteIncome);
   const [showModal, setShowModal] = useState(false);
   const [editItem, setEditItem] = useState<Income | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
