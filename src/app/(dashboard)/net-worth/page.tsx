@@ -15,7 +15,7 @@ import {
 } from "recharts";
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
-import { buildFinancialSummary, buildNetWorthHistory, fmt } from "@/lib/finance";
+import { buildFinancialSummary, buildNetWorthHistory, totalAssets, totalDebt, fmt } from "@/lib/finance";
 import { useFinanceStore } from "@/store/finance-store";
 
 export default function NetWorthPage() {
@@ -23,12 +23,17 @@ export default function NetWorthPage() {
   const expenses = useFinanceStore((s) => s.expenses);
   const assets = useFinanceStore((s) => s.assets);
   const debts = useFinanceStore((s) => s.debts);
+  const retirementAccounts = useFinanceStore((s) => s.retirementAccounts);
 
-  const summary = buildFinancialSummary(incomes, expenses, assets, debts);
+  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
+  const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
   const history = buildNetWorthHistory(summary.totalAssets, summary.totalDebt, 12);
   const firstNetWorth = history[0]?.netWorth ?? 0;
   const netWorthChange = summary.netWorth - firstNetWorth;
   const netWorthChangePct = firstNetWorth !== 0 ? (netWorthChange / Math.abs(firstNetWorth)) * 100 : 0;
+
+  const regularAssetsTotal = totalAssets(assets);
+  const debtTotal = totalDebt(debts);
 
   return (
     <div className="space-y-6">
@@ -43,7 +48,7 @@ export default function NetWorthPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Current Net Worth" value={fmt(summary.netWorth)} icon={BarChart3} accent="blue" trend="up" trendLabel="12-month growth" />
-        <StatCard title="Total Assets" value={fmt(summary.totalAssets, true)} accent="green" />
+        <StatCard title="Total Assets" value={fmt(summary.totalAssets, true)} sub="Includes retirement" accent="green" />
         <StatCard title="Total Debt" value={fmt(summary.totalDebt, true)} accent="red" />
         <StatCard
           title="12-Month Change"
@@ -87,6 +92,39 @@ export default function NetWorthPage() {
             <Bar dataKey="totalDebt" name="Debt" fill="var(--accent-red)" radius={[2, 2, 0, 0]} opacity={0.8} />
           </BarChart>
         </ResponsiveContainer>
+      </div>
+
+      <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+        <CardTitle>Balance Sheet</CardTitle>
+        <div className="mt-4 space-y-3">
+          {/* Assets */}
+          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>Assets</p>
+          <div className="flex justify-between text-sm py-1">
+            <span style={{ color: "var(--text-secondary)" }}>Regular Assets</span>
+            <span className="font-semibold" style={{ color: "var(--accent-green)" }}>{fmt(regularAssetsTotal)}</span>
+          </div>
+          <div className="flex justify-between text-sm py-1">
+            <span style={{ color: "var(--text-secondary)" }}>Retirement Accounts</span>
+            <span className="font-semibold" style={{ color: "var(--accent-purple)" }}>{fmt(retirementTotal)}</span>
+          </div>
+          <div className="flex justify-between text-sm py-1 border-t" style={{ borderColor: "var(--border-subtle)" }}>
+            <span className="font-medium" style={{ color: "var(--text-primary)" }}>Total Assets</span>
+            <span className="font-bold" style={{ color: "var(--accent-green)" }}>{fmt(summary.totalAssets)}</span>
+          </div>
+
+          {/* Liabilities */}
+          <p className="text-xs font-semibold uppercase tracking-wider pt-2" style={{ color: "var(--text-muted)" }}>Liabilities</p>
+          <div className="flex justify-between text-sm py-1">
+            <span style={{ color: "var(--text-secondary)" }}>Total Debt</span>
+            <span className="font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(debtTotal)}</span>
+          </div>
+
+          {/* Net Worth */}
+          <div className="flex justify-between items-center pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+            <span className="text-base font-semibold" style={{ color: "var(--text-primary)" }}>Net Worth</span>
+            <span className="text-xl font-bold" style={{ color: "var(--accent-blue)" }}>{fmt(summary.netWorth)}</span>
+          </div>
+        </div>
       </div>
     </div>
   );

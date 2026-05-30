@@ -41,8 +41,10 @@ export default function ForecastsPage() {
   const expenses = useFinanceStore((s) => s.expenses);
   const assets = useFinanceStore((s) => s.assets);
   const debts = useFinanceStore((s) => s.debts);
+  const retirementAccounts = useFinanceStore((s) => s.retirementAccounts);
 
-  const summary = buildFinancialSummary(incomes, expenses, assets, debts);
+  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
+  const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
   const forecast12 = buildForecast(summary.totalAssets, summary.totalDebt, summary.monthlyCashFlow, 12);
   const forecast60 = buildForecast(summary.totalAssets, summary.totalDebt, summary.monthlyCashFlow, 60);
   const projectedNetWorth1yr = forecast12[forecast12.length - 1].netWorth;

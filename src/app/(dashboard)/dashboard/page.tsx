@@ -53,11 +53,12 @@ const PIE_COLORS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
-  const { incomes, expenses, assets, debts, householdName, isAuthenticatedUser, isLoadedFromSupabase } = useFinanceStore();
+  const { incomes, expenses, assets, debts, retirementAccounts, householdName, isAuthenticatedUser, isLoadedFromSupabase } = useFinanceStore();
   const isEmpty = isAuthenticatedUser && isLoadedFromSupabase &&
     incomes.length === 0 && expenses.length === 0 && assets.length === 0 && debts.length === 0;
 
-  const summary = buildFinancialSummary(incomes, expenses, assets, debts);
+  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
+  const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
   const netWorthHistory = buildNetWorthHistory(summary.totalAssets, summary.totalDebt);
 
   const categoryTotals = expenses.reduce((acc, e) => {
@@ -194,11 +195,20 @@ export default function DashboardPage() {
           <div className="mt-4 space-y-3">
             <div>
               <div className="flex justify-between text-sm mb-1">
-                <span style={{ color: "var(--text-secondary)" }}>Total Assets</span>
-                <span className="font-semibold" style={{ color: "var(--accent-green)" }}>{fmt(summary.totalAssets)}</span>
+                <span style={{ color: "var(--text-secondary)" }}>Regular Assets</span>
+                <span className="font-semibold" style={{ color: "var(--accent-green)" }}>{fmt(summary.totalAssets - retirementTotal)}</span>
               </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
                 <div className="h-full rounded-full" style={{ width: "100%", background: "var(--accent-green)" }} />
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span style={{ color: "var(--text-secondary)" }}>Retirement Accounts</span>
+                <span className="font-semibold" style={{ color: "var(--accent-purple)" }}>{fmt(retirementTotal)}</span>
+              </div>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
+                <div className="h-full rounded-full" style={{ width: `${summary.totalAssets > 0 ? (retirementTotal / summary.totalAssets) * 100 : 0}%`, background: "var(--accent-purple)" }} />
               </div>
             </div>
             <div>
@@ -206,7 +216,7 @@ export default function DashboardPage() {
                 <span style={{ color: "var(--text-secondary)" }}>Total Debt</span>
                 <span className="font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(summary.totalDebt)}</span>
               </div>
-              <div className="h-2 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
+              <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
                 <div className="h-full rounded-full" style={{ width: `${summary.totalAssets > 0 ? (summary.totalDebt / summary.totalAssets) * 100 : 0}%`, background: "var(--accent-red)" }} />
               </div>
             </div>

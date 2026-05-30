@@ -27,8 +27,9 @@ function buildFinancialContext(
   assets: Asset[],
   debts: Debt[],
   projects: Project[],
+  retirementTotal = 0,
 ) {
-  const summary = buildFinancialSummary(incomes, expenses, assets, debts);
+  const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
 
   const expensesByCategory = expenses.reduce((acc, e) => {
     const m = toMonthly(e.amount, e.frequency);
@@ -159,7 +160,8 @@ function MessageBubble({ message }: { message: Message }) {
 }
 
 export default function AdvisorPage() {
-  const { incomes, expenses, assets, debts, projects } = useFinanceStore();
+  const { incomes, expenses, assets, debts, projects, retirementAccounts } = useFinanceStore();
+  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -188,7 +190,7 @@ export default function AdvisorPage() {
     setLoading(true);
 
     try {
-      const financialContext = buildFinancialContext(incomes, expenses, assets, debts, projects);
+      const financialContext = buildFinancialContext(incomes, expenses, assets, debts, projects, retirementTotal);
       const res = await fetch("/api/advisor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

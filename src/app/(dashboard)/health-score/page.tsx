@@ -26,9 +26,11 @@ export default function HealthScorePage() {
   const expenses = useFinanceStore((s) => s.expenses);
   const assets = useFinanceStore((s) => s.assets);
   const debts = useFinanceStore((s) => s.debts);
+  const retirementAccounts = useFinanceStore((s) => s.retirementAccounts);
   const householdName = useFinanceStore((s) => s.householdName);
 
-  const summary = buildFinancialSummary(incomes, expenses, assets, debts);
+  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
+  const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
   const liquidCash = assets.filter((a) => a.category === "cash").reduce((s, a) => s + a.value, 0);
   const emergencyFundMonths = summary.monthlyExpenses > 0 ? liquidCash / summary.monthlyExpenses : 0;
   const health = calculateHealthScore(summary, emergencyFundMonths);

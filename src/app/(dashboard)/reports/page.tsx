@@ -22,8 +22,10 @@ export default function ReportsPage() {
   const expenses = useFinanceStore((s) => s.expenses);
   const assets = useFinanceStore((s) => s.assets);
   const debts = useFinanceStore((s) => s.debts);
+  const retirementAccounts = useFinanceStore((s) => s.retirementAccounts);
 
-  const summary = buildFinancialSummary(incomes, expenses, assets, debts);
+  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
+  const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
 
   // Build 6-month chart data using current figures for the current month.
   // Historical months show dashes until real transaction history is available.

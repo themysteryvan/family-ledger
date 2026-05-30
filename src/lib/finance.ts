@@ -55,11 +55,12 @@ export function buildFinancialSummary(
   incomes: Income[],
   expenses: Expense[],
   assets: Asset[],
-  debts: Debt[]
+  debts: Debt[],
+  retirementTotal = 0
 ): FinancialSummary {
   const income = monthlyIncome(incomes);
   const expense = monthlyExpenses(expenses);
-  const assets_ = totalAssets(assets);
+  const assets_ = totalAssets(assets) + retirementTotal;
   const debt = totalDebt(debts);
 
   return {
