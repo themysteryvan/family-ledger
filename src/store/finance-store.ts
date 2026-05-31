@@ -336,6 +336,27 @@ export const useFinanceStore = create<FinanceStore>()(
     {
       name: "family-ledger-store",
       storage: createJSONStorage(() => localStorage),
+      version: 1,
+      migrate: (persistedState: unknown, version: number) => {
+        const s = persistedState as Record<string, unknown>;
+        function backfill(arr: unknown[]): unknown[] {
+          return arr.map((item) => {
+            const r = item as Record<string, unknown>;
+            return r.dataSource ? r : { ...r, dataSource: "Manual Entry" };
+          });
+        }
+        if (version === 0) {
+          return {
+            ...s,
+            incomes: backfill((s.incomes as unknown[] | undefined) ?? []),
+            expenses: backfill((s.expenses as unknown[] | undefined) ?? []),
+            assets: backfill((s.assets as unknown[] | undefined) ?? []),
+            debts: backfill((s.debts as unknown[] | undefined) ?? []),
+            retirementAccounts: backfill((s.retirementAccounts as unknown[] | undefined) ?? []),
+          };
+        }
+        return s;
+      },
       partialize: (state) => ({
         incomes: state.incomes,
         expenses: state.expenses,

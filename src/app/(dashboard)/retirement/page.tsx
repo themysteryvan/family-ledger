@@ -53,7 +53,7 @@ export default function RetirementPage() {
       const { id, ...patch } = data;
       updateRetirementAccount(id, patch);
     } else {
-      addRetirementAccount(data);
+      addRetirementAccount({ ...data, dataSource: "Manual Entry" });
     }
     setShowModal(false);
     setEditItem(null);
@@ -90,14 +90,14 @@ export default function RetirementPage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              {["Account", "Type", "Owner", "Balance", "Contrib. YTD", "Employer Match", ""].map((h) => (
+              {["Account", "Type", "Owner", "Balance", "Contrib. YTD", "Employer Match", "Data Source", ""].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {accounts.length === 0 && (
-              <tr><td colSpan={7}>
+              <tr><td colSpan={8}>
                 <EmptyState icon={PiggyBank} title="No retirement accounts yet" description="Add your 401(k), IRA, and other retirement accounts to track your long-term savings." action="Add Account" onAction={openAdd} />
               </td></tr>
             )}
@@ -125,6 +125,11 @@ export default function RetirementPage() {
                 </td>
                 <td className="px-5 py-3" style={{ color: "var(--text-secondary)" }}>
                   {acct.employerMatchPct != null ? `${acct.employerMatchPct}%` : "—"}
+                </td>
+                <td className="px-5 py-3">
+                  <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
+                    {acct.dataSource || "Manual Entry"}
+                  </span>
                 </td>
                 <td className="px-5 py-3">
                   {deletingId === acct.id ? (

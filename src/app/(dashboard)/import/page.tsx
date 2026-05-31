@@ -48,6 +48,7 @@ interface ParsedRow {
   description: string;
   amount: number;
   frequency: FrequencyType;
+  dataSource: string;
   category: Expense["category"];
   aiCategory: Expense["category"] | null;
   include: boolean;
@@ -100,7 +101,7 @@ function parseCSV(text: string): ParsedRow[] {
 
     if (!desc || amount === 0) continue;
 
-    rows.push({ id: `${i}-${Date.now()}`, date: dateStr || "", description: desc, amount, frequency: "once", category: "other", aiCategory: null, include: true });
+    rows.push({ id: `${i}-${Date.now()}`, date: dateStr || "", description: desc, amount, frequency: "once", dataSource: "Bank Statement", category: "other", aiCategory: null, include: true });
   }
   return rows;
 }
@@ -125,6 +126,7 @@ async function parsePDF(file: File): Promise<ParsedRow[]> {
     description: t.description,
     amount: t.amount,
     frequency: "once" as FrequencyType,
+    dataSource: "Bank Statement",
     category: "other" as Expense["category"],
     aiCategory: null,
     include: true,
@@ -284,6 +286,7 @@ export default function ImportPage() {
         name: row.description,
         amount: row.amount,
         frequency: row.frequency,
+        dataSource: row.dataSource,
         category: row.category,
         isFixed: false,
         isEssential: ESSENTIAL_CATEGORIES.has(row.category),

@@ -58,56 +58,56 @@ export async function GET() {
 
   buildSheet(wb, {
     name: "Income",
-    headers: ["Source Name", "Amount", "Frequency", "Owner", "Category", "Notes"],
-    widths: [28, 14, 20, 16, 20, 36],
+    headers: ["Name", "Amount", "Frequency", "Owner", "Category", "Data Source", "Notes"],
+    widths: [28, 14, 20, 16, 20, 22, 36],
     examples: [
-      ["Annual Salary — Senior PM", 12500, "Monthly", "Alex", "Salary", "After-tax take-home"],
-      ["Freelance Design", 2000, "Monthly", "Jordan", "Freelance", "Average; varies by project"],
-      ["Rental Income — 2BR", 2400, "Monthly", "Joint", "Rental", "Net of property mgmt fee"],
+      ["Annual Salary — Senior PM", 12500, "Monthly", "Alex", "Salary", "Paystub", "After-tax take-home"],
+      ["Freelance Design", 2000, "Monthly", "Jordan", "Freelance", "Bank Statement", "Average; varies by project"],
+      ["Rental Income — 2BR", 2400, "Monthly", "Joint", "Rental", "Manual Entry", "Net of property mgmt fee"],
     ],
   });
 
   buildSheet(wb, {
     name: "Expenses",
-    headers: ["Name", "Amount", "Frequency", "Category", "Owner", "Notes"],
-    widths: [28, 14, 20, 20, 16, 36],
+    headers: ["Name", "Amount", "Frequency", "Category", "Owner", "Data Source", "Notes"],
+    widths: [28, 14, 20, 20, 16, 22, 36],
     examples: [
-      ["Mortgage — Primary Home", 3200, "Monthly", "Housing", "Joint", "Principal + interest + escrow"],
-      ["Electricity & Gas", 180, "Monthly", "Utilities", "Joint", "Average; higher in winter"],
-      ["Grocery Shopping", 900, "Monthly", "Food", "Joint", ""],
+      ["Mortgage — Primary Home", 3200, "Monthly", "Housing", "Joint", "Mortgage Statement", "Principal + interest + escrow"],
+      ["Electricity & Gas", 180, "Monthly", "Utilities", "Joint", "Manual Entry", "Average; higher in winter"],
+      ["Grocery Shopping", 900, "Monthly", "Food", "Joint", "Manual Entry", ""],
     ],
   });
 
   buildSheet(wb, {
     name: "Assets",
-    headers: ["Name", "Type", "Current Value", "Purchase Price", "Institution", "Notes"],
-    widths: [28, 20, 18, 18, 22, 36],
+    headers: ["Name", "Type", "Current Value", "Purchase Price", "Institution", "Data Source", "Notes"],
+    widths: [28, 20, 18, 18, 22, 22, 36],
     examples: [
-      ["Primary Home", "Real Estate", 620000, 480000, "", "Zillow estimate"],
-      ["HYSA — Marcus", "Savings", 28000, "", "Goldman Sachs", "Emergency fund — 4.5% APY"],
-      ["Vanguard Taxable Brokerage", "Investment", 95000, 60000, "Vanguard", "Index fund portfolio"],
+      ["Primary Home", "Real Estate", 620000, 480000, "", "Tax Return", "Zillow estimate"],
+      ["HYSA — Marcus", "Savings", 28000, "", "Goldman Sachs", "Bank Statement", "Emergency fund — 4.5% APY"],
+      ["Vanguard Taxable Brokerage", "Investment", 95000, 60000, "Vanguard", "Brokerage Statement", "Index fund portfolio"],
     ],
   });
 
   buildSheet(wb, {
     name: "Debts",
-    headers: ["Name", "Type", "Balance", "Interest Rate (%)", "Minimum Payment", "Owner", "Notes"],
-    widths: [28, 20, 16, 18, 18, 14, 36],
+    headers: ["Name", "Type", "Balance", "Interest Rate (%)", "Minimum Payment", "Owner", "Data Source", "Notes"],
+    widths: [28, 20, 16, 18, 18, 14, 22, 36],
     examples: [
-      ["Primary Mortgage", "Mortgage", 392000, 6.75, 3200, "Joint", "30-yr fixed — Chase"],
-      ["Honda CR-V Loan", "Auto", 14500, 5.99, 620, "Alex", "Honda Financial"],
-      ["Federal Student Loans", "Student Loan", 28000, 5.05, 310, "Jordan", "MOHELA — IDR plan"],
+      ["Primary Mortgage", "Mortgage", 392000, 6.75, 3200, "Joint", "Mortgage Statement", "30-yr fixed — Chase"],
+      ["Honda CR-V Loan", "Auto", 14500, 5.99, 620, "Alex", "Manual Entry", "Honda Financial"],
+      ["Federal Student Loans", "Student Loan", 28000, 5.05, 310, "Jordan", "Manual Entry", "MOHELA — IDR plan"],
     ],
   });
 
   buildSheet(wb, {
     name: "Retirement",
-    headers: ["Account Name", "Type", "Owner", "Current Balance", "Monthly Contribution", "Employer Match %", "Institution"],
-    widths: [28, 20, 14, 18, 22, 18, 20],
+    headers: ["Account Name", "Type", "Owner", "Current Balance", "Monthly Contribution", "Employer Match %", "Institution", "Data Source"],
+    widths: [28, 20, 14, 18, 22, 18, 20, 22],
     examples: [
-      ["Fidelity 401(k)", "401(k)", "Alex", 148000, 1920, 4, "Fidelity"],
-      ["Vanguard Roth IRA", "Roth IRA", "Alex", 42000, 583, 0, "Vanguard"],
-      ["Fidelity Roth 401(k)", "Roth 401(k)", "Jordan", 61000, 1500, 3, "Fidelity"],
+      ["Fidelity 401(k)", "401(k)", "Alex", 148000, 1920, 4, "Fidelity", "Brokerage Statement"],
+      ["Vanguard Roth IRA", "Roth IRA", "Alex", 42000, 583, 0, "Vanguard", "Brokerage Statement"],
+      ["Fidelity Roth 401(k)", "Roth 401(k)", "Jordan", 61000, 1500, 3, "Fidelity", "Brokerage Statement"],
     ],
   });
 

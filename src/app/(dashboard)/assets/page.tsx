@@ -72,7 +72,7 @@ export default function AssetsPage() {
       const { id, ...patch } = data;
       updateAsset(id, patch);
     } else {
-      addAsset(data);
+      addAsset({ ...data, dataSource: "Manual Entry" });
     }
     setShowModal(false);
     setEditItem(null);
@@ -152,14 +152,14 @@ export default function AssetsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              {["Asset", "Category", "Current Value", "Purchase Price", "Gain/Loss", "Growth Rate", ""].map((h) => (
+              {["Asset", "Category", "Current Value", "Purchase Price", "Gain/Loss", "Growth Rate", "Data Source", ""].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {assets.length === 0 && (
-              <tr><td colSpan={7}>
+              <tr><td colSpan={8}>
                 <EmptyState icon={Building2} title="No assets yet" description="Add your home, retirement accounts, investments, and savings to track your total wealth." action="Add Asset" onAction={openAdd} />
               </td></tr>
             )}
@@ -188,6 +188,11 @@ export default function AssetsPage() {
                         {asset.appreciationRate > 0 ? "+" : ""}{asset.appreciationRate}%/yr
                       </span>
                     ) : <span style={{ color: "var(--text-muted)" }}>—</span>}
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
+                      {asset.dataSource || "Manual Entry"}
+                    </span>
                   </td>
                   <td className="px-5 py-3">
                     {deletingId === asset.id ? (

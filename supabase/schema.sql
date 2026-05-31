@@ -22,6 +22,7 @@ create table if not exists incomes (
   owner text not null,
   is_active boolean not null default true,
   start_date text,
+  data_source varchar(100) default 'Manual Entry',
   notes text,
   created_at timestamptz default now()
 );
@@ -41,6 +42,7 @@ create table if not exists expenses (
   category text not null,
   is_fixed boolean not null default false,
   is_essential boolean not null default false,
+  data_source varchar(100) default 'Manual Entry',
   notes text,
   created_at timestamptz default now()
 );
@@ -60,6 +62,7 @@ create table if not exists assets (
   appreciation_rate numeric,
   purchase_price numeric,
   purchase_date text,
+  data_source varchar(100) default 'Manual Entry',
   notes text,
   created_at timestamptz default now()
 );
@@ -81,6 +84,7 @@ create table if not exists debts (
   category text not null,
   lender text,
   due_date text,
+  data_source varchar(100) default 'Manual Entry',
   notes text,
   created_at timestamptz default now()
 );

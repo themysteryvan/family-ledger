@@ -74,7 +74,7 @@ export default function IncomePage() {
       const { id, ...patch } = data;
       updateIncome(id, patch);
     } else {
-      addIncome(data);
+      addIncome({ ...data, dataSource: "Manual Entry" });
     }
     setShowModal(false);
     setEditItem(null);
@@ -173,14 +173,14 @@ export default function IncomePage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              {["Source", "Owner", "Category", "Amount", "Frequency", "Monthly", "Status", ""].map((h) => (
+              {["Source", "Owner", "Category", "Amount", "Frequency", "Monthly", "Status", "Data Source", ""].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {incomes.length === 0 && (
-              <tr><td colSpan={8}>
+              <tr><td colSpan={9}>
                 <EmptyState icon={TrendingUp} title="No income sources yet" description="Add your first income source to start tracking your household earnings." action="Add Income" onAction={openAdd} />
               </td></tr>
             )}
@@ -202,6 +202,11 @@ export default function IncomePage() {
                 <td className="px-5 py-3">
                   <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: inc.isActive ? "var(--accent-green-dim)" : "var(--bg-muted)", color: inc.isActive ? "var(--accent-green)" : "var(--text-muted)" }}>
                     {inc.isActive ? "Active" : "Inactive"}
+                  </span>
+                </td>
+                <td className="px-5 py-3">
+                  <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
+                    {inc.dataSource || "Manual Entry"}
                   </span>
                 </td>
                 <td className="px-5 py-3">

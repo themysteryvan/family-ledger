@@ -124,12 +124,13 @@ export async function POST(req: NextRequest) {
   const retirementAccounts: Omit<RetirementAccount, "id">[] = [];
 
   // ── Income sheet ──────────────────────────────────────────────────────────
+  // Accepts "Name" (new template) or "Source Name" (legacy) — both map to row[0]
   const incomeSheet = wb.getWorksheet("Income");
   if (incomeSheet) {
     for (const row of sheetRows(incomeSheet)) {
       if (isBlank(row)) continue;
       const name = str(row[0]);
-      if (!name) continue;
+      if (!name || name === "Name" || name === "Source Name") continue;
       incomes.push({
         name,
         amount: num(row[1]),
@@ -137,7 +138,8 @@ export async function POST(req: NextRequest) {
         owner: str(row[3]),
         category: mapIncomeCategory(str(row[4])),
         isActive: true,
-        notes: str(row[5]) || undefined,
+        dataSource: str(row[5]) || "Excel Spreadsheet",
+        notes: str(row[6]) || undefined,
       });
     }
   }
@@ -157,7 +159,8 @@ export async function POST(req: NextRequest) {
         category: cat,
         isFixed: false,
         isEssential: ["housing", "utilities", "food", "healthcare", "insurance"].includes(cat),
-        notes: str(row[5]) || undefined,
+        dataSource: str(row[5]) || "Excel Spreadsheet",
+        notes: str(row[6]) || undefined,
       });
     }
   }
@@ -170,12 +173,14 @@ export async function POST(req: NextRequest) {
       const name = str(row[0]);
       if (!name) continue;
       const institution = str(row[4]);
-      const notes = str(row[5]);
+      const dataSource = str(row[5]) || "Excel Spreadsheet";
+      const notes = str(row[6]);
       assets.push({
         name,
         category: mapAssetCategory(str(row[1])),
         value: num(row[2]),
         purchasePrice: num(row[3]) || undefined,
+        dataSource,
         notes: [institution, notes].filter(Boolean).join(" — ") || undefined,
       });
     }
@@ -196,7 +201,8 @@ export async function POST(req: NextRequest) {
         originalBalance: balance,
         interestRate: num(row[3]),
         minimumPayment: num(row[4]),
-        notes: str(row[6]) || undefined,
+        dataSource: str(row[6]) || "Excel Spreadsheet",
+        notes: str(row[7]) || undefined,
       });
     }
   }
@@ -216,6 +222,7 @@ export async function POST(req: NextRequest) {
         balance: num(row[3]),
         contributionYtd: undefined,
         employerMatchPct: num(row[5]) || undefined,
+        dataSource: str(row[7]) || "Excel Spreadsheet",
         notes: institution || undefined,
       });
     }

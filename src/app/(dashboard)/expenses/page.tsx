@@ -73,7 +73,7 @@ export default function ExpensesPage() {
       const { id, ...patch } = data;
       updateExpense(id, patch);
     } else {
-      addExpense(data);
+      addExpense({ ...data, dataSource: "Manual Entry" });
     }
     setShowModal(false);
     setEditItem(null);
@@ -126,14 +126,14 @@ export default function ExpensesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              {["Expense", "Category", "Amount", "Frequency", "Monthly", "Type", ""].map((h) => (
+              {["Expense", "Category", "Amount", "Frequency", "Monthly", "Type", "Data Source", ""].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {expenses.length === 0 && (
-              <tr><td colSpan={7}>
+              <tr><td colSpan={8}>
                 <EmptyState icon={Receipt} title="No expenses yet" description="Add your first expense to start tracking your household spending." action="Add Expense" onAction={openAdd} />
               </td></tr>
             )}
@@ -162,6 +162,11 @@ export default function ExpensesPage() {
                         <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "var(--accent-green-dim)", color: "var(--accent-green)" }}>Essential</span>
                       )}
                     </div>
+                  </td>
+                  <td className="px-5 py-3">
+                    <span className="px-2 py-0.5 rounded-full text-xs" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
+                      {exp.dataSource || "Manual Entry"}
+                    </span>
                   </td>
                   <td className="px-5 py-3">
                     {deletingId === exp.id ? (

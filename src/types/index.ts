@@ -16,6 +16,7 @@ export interface Income {
   owner: string;
   isActive: boolean;
   startDate?: string;
+  dataSource?: string;
   notes?: string;
 }
 
@@ -41,6 +42,7 @@ export interface Expense {
     | "other";
   isFixed: boolean;
   isEssential: boolean;
+  dataSource?: string;
   notes?: string;
 }
 
@@ -59,6 +61,7 @@ export interface Asset {
   appreciationRate?: number;
   purchasePrice?: number;
   purchaseDate?: string;
+  dataSource?: string;
   notes?: string;
 }
 
@@ -79,6 +82,7 @@ export interface Debt {
     | "other";
   lender?: string;
   dueDate?: string;
+  dataSource?: string;
   notes?: string;
 }
 
@@ -127,6 +131,7 @@ export interface RetirementAccount {
   contributionYtd?: number;
   employerMatchPct?: number;
   annualContributionLimit?: number;
+  dataSource?: string;
   notes?: string;
 }
 
