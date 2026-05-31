@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { Upload, FileText, Sparkles, CheckCircle, AlertCircle, X, Loader2 } from "lucide-react";
+import { Upload, FileText, Sparkles, CheckCircle, AlertCircle, X, Loader2, Download } from "lucide-react";
 import { useFinanceStore } from "@/store/finance-store";
 import { fmt } from "@/lib/finance";
 import { CategorySelect } from "@/components/ui/category-select";
@@ -261,9 +261,20 @@ export default function ImportPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Import Transactions</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Upload a bank statement or CSV export and let AI categorize your transactions</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Import Transactions</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Upload a bank statement or CSV export and let AI categorize your transactions</p>
+        </div>
+        <a
+          href="/api/download-template"
+          download="family-ledger-template.xlsx"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium flex-shrink-0"
+          style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+        >
+          <Download size={14} />
+          Download Template
+        </a>
       </div>
 
       {error && (
