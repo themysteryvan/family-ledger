@@ -6,7 +6,7 @@ import { useFinanceStore } from "@/store/finance-store";
 import { fmt } from "@/lib/finance";
 import { CategorySelect } from "@/components/ui/category-select";
 import { EXPENSE_CATEGORIES } from "@/components/forms/expense-form";
-import type { Expense, Income, Asset, Debt, RetirementAccount } from "@/types";
+import type { Expense, Income, Asset, Debt, RetirementAccount, FrequencyType } from "@/types";
 
 interface ExcelImportResult {
   incomes: Omit<Income, "id">[];
@@ -34,11 +34,20 @@ const CATEGORY_MAP: Record<string, Expense["category"]> = {
 const ESSENTIAL_CATEGORIES = new Set<Expense["category"]>(["housing", "utilities", "food", "healthcare", "insurance"]);
 
 
+const FREQUENCY_OPTIONS: { value: FrequencyType; label: string }[] = [
+  { value: "once", label: "Once" },
+  { value: "monthly", label: "Monthly" },
+  { value: "weekly", label: "Weekly" },
+  { value: "biweekly", label: "Bi-weekly" },
+  { value: "annually", label: "Annual" },
+];
+
 interface ParsedRow {
   id: string;
   date: string;
   description: string;
   amount: number;
+  frequency: FrequencyType;
   category: Expense["category"];
   aiCategory: Expense["category"] | null;
   include: boolean;
@@ -91,7 +100,7 @@ function parseCSV(text: string): ParsedRow[] {
 
     if (!desc || amount === 0) continue;
 
-    rows.push({ id: `${i}-${Date.now()}`, date: dateStr || "", description: desc, amount, category: "other", aiCategory: null, include: true });
+    rows.push({ id: `${i}-${Date.now()}`, date: dateStr || "", description: desc, amount, frequency: "once", category: "other", aiCategory: null, include: true });
   }
   return rows;
 }
@@ -115,6 +124,7 @@ async function parsePDF(file: File): Promise<ParsedRow[]> {
     date: t.date,
     description: t.description,
     amount: t.amount,
+    frequency: "once" as FrequencyType,
     category: "other" as Expense["category"],
     aiCategory: null,
     include: true,
@@ -273,7 +283,7 @@ export default function ImportPage() {
       addExpense({
         name: row.description,
         amount: row.amount,
-        frequency: "once",
+        frequency: row.frequency,
         category: row.category,
         isFixed: false,
         isEssential: ESSENTIAL_CATEGORIES.has(row.category),
@@ -451,7 +461,7 @@ export default function ImportPage() {
                       style={{ accentColor: "var(--accent-blue)" }}
                     />
                   </th>
-                  {["Date", "Description", "Amount", "Category", "AI?"].map((h) => (
+                  {["Date", "Description", "Amount", "Frequency", "Category", "AI?"].map((h) => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
                   ))}
                 </tr>
@@ -467,6 +477,18 @@ export default function ImportPage() {
                       <p className="truncate font-medium" style={{ color: "var(--text-primary)" }}>{row.description}</p>
                     </td>
                     <td className="px-4 py-2.5 font-semibold whitespace-nowrap" style={{ color: "var(--accent-red)" }}>{fmt(row.amount)}</td>
+                    <td className="px-4 py-2.5 min-w-[130px]">
+                      <select
+                        value={row.frequency}
+                        onChange={(e) => updateRow(row.id, { frequency: e.target.value as FrequencyType })}
+                        className="w-full rounded-md px-2 py-1 text-xs"
+                        style={{ background: "var(--bg-elevated)", color: "var(--text-primary)", border: "1px solid var(--border)", outline: "none" }}
+                      >
+                        {FREQUENCY_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>{o.label}</option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="px-4 py-2.5 min-w-[160px]">
                       <CategorySelect
                         value={row.category}
