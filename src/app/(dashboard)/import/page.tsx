@@ -270,7 +270,7 @@ export default function ImportPage() {
           href="/api/download-template"
           download="family-ledger-template.xlsx"
           className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium flex-shrink-0"
-          style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+          style={{ background: "var(--accent-blue)", color: "#fff" }}
         >
           <Download size={14} />
           Download Template
