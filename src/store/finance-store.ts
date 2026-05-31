@@ -74,7 +74,8 @@ export const useFinanceStore = create<FinanceStore>()(
   // ── Load from Supabase ────────────────────────────────────────────────────
 
   async loadFromSupabase(userId: string) {
-    // Clear mock data immediately — authenticated users must never see it
+    // Clear Supabase-backed data immediately. retirementAccounts are localStorage-only
+    // (no Supabase table) so we preserve them — they're cleared on SIGNED_OUT.
     set({
       isAuthenticatedUser: true,
       incomes: [],
@@ -82,7 +83,6 @@ export const useFinanceStore = create<FinanceStore>()(
       assets: [],
       debts: [],
       projects: [],
-      retirementAccounts: [],
     });
 
     const supabase = createClient();
