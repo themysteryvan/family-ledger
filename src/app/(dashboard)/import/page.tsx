@@ -6,7 +6,15 @@ import { useFinanceStore } from "@/store/finance-store";
 import { fmt } from "@/lib/finance";
 import { CategorySelect } from "@/components/ui/category-select";
 import { EXPENSE_CATEGORIES } from "@/components/forms/expense-form";
-import type { Expense } from "@/types";
+import type { Expense, Income, Asset, Debt, RetirementAccount } from "@/types";
+
+interface ExcelImportResult {
+  incomes: Omit<Income, "id">[];
+  expenses: Omit<Expense, "id">[];
+  assets: Omit<Asset, "id">[];
+  debts: Omit<Debt, "id">[];
+  retirementAccounts: Omit<RetirementAccount, "id">[];
+}
 
 const CATEGORY_MAP: Record<string, Expense["category"]> = {
   housing: "housing",
@@ -135,16 +143,17 @@ async function categorizeWithAI(rows: ParsedRow[]): Promise<Record<string, Expen
   return result;
 }
 
-type Stage = "upload" | "parsing" | "categorizing" | "review" | "done";
+type Stage = "upload" | "parsing" | "categorizing" | "review" | "excel-review" | "done";
 
 export default function ImportPage() {
-  const { addExpense } = useFinanceStore();
+  const { addExpense, addIncome, addAsset, addDebt, addRetirementAccount } = useFinanceStore();
   const [stage, setStage] = useState<Stage>("upload");
   const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [excelData, setExcelData] = useState<ExcelImportResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState("");
-  const [fileType, setFileType] = useState<"csv" | "pdf">("csv");
+  const [fileType, setFileType] = useState<"csv" | "pdf" | "xlsx">("csv");
   const fileRef = useRef<HTMLInputElement>(null);
 
   const runCategorization = useCallback(async (parsed: ParsedRow[]) => {
@@ -173,9 +182,39 @@ export default function ImportPage() {
   const processFile = useCallback(async (file: File) => {
     const isPDF = file.name.toLowerCase().endsWith(".pdf");
     const isCSV = file.name.toLowerCase().endsWith(".csv");
+    const isXLSX = file.name.toLowerCase().endsWith(".xlsx");
 
-    if (!isPDF && !isCSV) {
-      setError("Please upload a CSV or PDF file.");
+    if (!isPDF && !isCSV && !isXLSX) {
+      setError("Please upload a CSV, PDF, or Excel (.xlsx) file.");
+      return;
+    }
+
+    if (isXLSX) {
+      setError(null);
+      setFileName(file.name);
+      setFileType("xlsx");
+      setStage("parsing");
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        const res = await fetch("/api/parse-excel", { method: "POST", body: form });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText }));
+          throw new Error(err.error || "Excel parsing failed");
+        }
+        const data = await res.json() as ExcelImportResult;
+        const total = data.incomes.length + data.expenses.length + data.assets.length + data.debts.length + data.retirementAccounts.length;
+        if (total === 0) {
+          setError("No data found in the Excel file. Make sure you filled in the tabs and deleted the example rows.");
+          setStage("upload");
+          return;
+        }
+        setExcelData(data);
+        setStage("excel-review");
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Excel parsing failed.");
+        setStage("upload");
+      }
       return;
     }
 
@@ -244,9 +283,20 @@ export default function ImportPage() {
     setStage("done");
   }
 
+  function confirmExcelImport() {
+    if (!excelData) return;
+    excelData.incomes.forEach((item) => addIncome(item));
+    excelData.expenses.forEach((item) => addExpense(item));
+    excelData.assets.forEach((item) => addAsset(item));
+    excelData.debts.forEach((item) => addDebt(item));
+    excelData.retirementAccounts.forEach((item) => addRetirementAccount(item));
+    setStage("done");
+  }
+
   function reset() {
     setStage("upload");
     setRows([]);
+    setExcelData(null);
     setError(null);
     setFileName("");
     if (fileRef.current) fileRef.current.value = "";
@@ -305,12 +355,13 @@ export default function ImportPage() {
           </div>
           <div className="text-center">
             <p className="font-medium" style={{ color: "var(--text-primary)" }}>Drop a file here, or click to browse</p>
-            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Supports CSV exports and PDF bank statements</p>
+            <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Supports CSV exports, PDF bank statements, and Excel templates</p>
           </div>
           <div className="flex items-center gap-3">
             {[
               { label: "CSV", desc: "Chase, BoA, Citi…" },
               { label: "PDF", desc: "Bank statements" },
+              { label: "XLSX", desc: "Family Ledger template" },
             ].map(({ label, desc }) => (
               <div key={label} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "var(--bg-elevated)" }}>
                 <FileText size={13} style={{ color: "var(--accent-blue)" }} />
@@ -322,7 +373,7 @@ export default function ImportPage() {
           <p className="text-xs px-6 text-center" style={{ color: "var(--text-muted)" }}>
             PDF must be text-based (not a scanned image). CSV needs date, description, and amount columns.
           </p>
-          <input ref={fileRef} type="file" accept=".csv,.pdf" className="hidden" onChange={onFileInput} />
+          <input ref={fileRef} type="file" accept=".csv,.pdf,.xlsx" className="hidden" onChange={onFileInput} />
         </div>
       )}
 
@@ -438,6 +489,63 @@ export default function ImportPage() {
         </>
       )}
 
+      {/* Excel review */}
+      {stage === "excel-review" && excelData && (() => {
+        const sections = [
+          { label: "Income", count: excelData.incomes.length, color: "var(--accent-green)", items: excelData.incomes.map((r) => ({ name: r.name, detail: `${fmt(r.amount)} · ${r.frequency}` })) },
+          { label: "Expenses", count: excelData.expenses.length, color: "var(--accent-red)", items: excelData.expenses.map((r) => ({ name: r.name, detail: `${fmt(r.amount)} · ${r.frequency}` })) },
+          { label: "Assets", count: excelData.assets.length, color: "var(--accent-blue)", items: excelData.assets.map((r) => ({ name: r.name, detail: fmt(r.value) })) },
+          { label: "Debts", count: excelData.debts.length, color: "var(--accent-amber)", items: excelData.debts.map((r) => ({ name: r.name, detail: fmt(r.balance) })) },
+          { label: "Retirement", count: excelData.retirementAccounts.length, color: "var(--accent-purple)", items: excelData.retirementAccounts.map((r) => ({ name: r.name, detail: fmt(r.balance) })) },
+        ].filter((s) => s.count > 0);
+        const total = sections.reduce((s, sec) => s + sec.count, 0);
+        return (
+          <>
+            <div className="flex items-center justify-between rounded-xl border px-5 py-4" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+              <div className="flex items-center gap-6">
+                <div>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>File</p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <FileText size={13} style={{ color: "var(--accent-green)" }} />
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{fileName}</p>
+                    <span className="text-xs px-1.5 py-0.5 rounded font-medium uppercase" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>xlsx</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs" style={{ color: "var(--text-muted)" }}>Records found</p>
+                  <p className="text-sm font-semibold mt-0.5" style={{ color: "var(--text-primary)" }}>{total} across {sections.length} tab{sections.length !== 1 ? "s" : ""}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={reset} className="text-sm px-4 py-2 rounded-lg" style={{ color: "var(--text-muted)", background: "var(--bg-elevated)" }}>Cancel</button>
+                <button onClick={confirmExcelImport} className="text-sm font-medium px-5 py-2 rounded-lg" style={{ background: "var(--accent-blue)", color: "#fff" }}>
+                  Import {total} record{total !== 1 ? "s" : ""}
+                </button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              {sections.map((sec) => (
+                <div key={sec.label} className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+                  <div className="px-5 py-3 border-b flex items-center gap-2" style={{ borderColor: "var(--border-subtle)" }}>
+                    <span className="w-2 h-2 rounded-full" style={{ background: sec.color }} />
+                    <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{sec.label}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full ml-1" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>{sec.count}</span>
+                  </div>
+                  <div className="divide-y" style={{ borderColor: "var(--border-subtle)" }}>
+                    {sec.items.map((item, i) => (
+                      <div key={i} className="px-5 py-2.5 flex items-center justify-between">
+                        <span className="text-sm" style={{ color: "var(--text-primary)" }}>{item.name}</span>
+                        <span className="text-sm" style={{ color: "var(--text-muted)" }}>{item.detail}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        );
+      })()}
+
       {/* Done */}
       {stage === "done" && (
         <div className="rounded-xl border flex flex-col items-center justify-center gap-5 py-20" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
@@ -447,7 +555,9 @@ export default function ImportPage() {
           <div className="text-center">
             <p className="font-semibold text-lg" style={{ color: "var(--text-primary)" }}>Import complete!</p>
             <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-              {includedCount} transaction{includedCount !== 1 ? "s" : ""} ({fmt(totalAmount)}) added to your expenses
+              {excelData
+                ? `${(excelData.incomes.length + excelData.expenses.length + excelData.assets.length + excelData.debts.length + excelData.retirementAccounts.length)} records imported across all sections`
+                : `${includedCount} transaction${includedCount !== 1 ? "s" : ""} (${fmt(totalAmount)}) added to your expenses`}
             </p>
           </div>
           <button onClick={reset} className="text-sm font-medium px-5 py-2 rounded-lg" style={{ background: "var(--accent-blue)", color: "#fff" }}>
