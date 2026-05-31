@@ -74,16 +74,7 @@ export const useFinanceStore = create<FinanceStore>()(
   // ── Load from Supabase ────────────────────────────────────────────────────
 
   async loadFromSupabase(userId: string) {
-    // Clear Supabase-backed data immediately. retirementAccounts are localStorage-only
-    // (no Supabase table) so we preserve them — they're cleared on SIGNED_OUT.
-    set({
-      isAuthenticatedUser: true,
-      incomes: [],
-      expenses: [],
-      assets: [],
-      debts: [],
-      projects: [],
-    });
+    set({ isAuthenticatedUser: true });
 
     const supabase = createClient();
 
@@ -91,7 +82,7 @@ export const useFinanceStore = create<FinanceStore>()(
     let { data: household, error: householdErr } = await supabase
       .from("households")
       .select("id, name")
-      .eq("user_id", userId)
+      .eq("owner_id", userId)
       .single();
 
     if (householdErr && householdErr.code !== "PGRST116") {
@@ -101,15 +92,19 @@ export const useFinanceStore = create<FinanceStore>()(
     if (!household) {
       const { data: created, error: createErr } = await supabase
         .from("households")
-        .insert({ user_id: userId, name: "My Household" })
+        .insert({ owner_id: userId, name: "My Household" })
         .select("id, name")
         .single();
       if (createErr) console.error("[finance-store] Failed to create household:", createErr);
       household = created;
     }
 
+    // If household fetch/create failed, leave existing localStorage state intact
     if (!household) return;
     const householdId = household.id;
+
+    // Household confirmed — safe to replace local data with Supabase truth
+    set({ incomes: [], expenses: [], assets: [], debts: [], projects: [] });
 
     const [
       { data: incomeRows, error: incomeErr },
