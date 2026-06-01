@@ -1,10 +1,10 @@
 import type { Income, Expense, Asset, Debt, Project, ProjectExpense, RetirementAccount } from "@/types";
 
-// ── Row types (snake_case from Supabase) ─────────────────────────────────────
+// ── Row types (snake_case matching actual Supabase columns) ───────────────────
 
 export interface IncomeRow {
   id: string; household_id: string; name: string; amount: number;
-  frequency: string; category: string; owner: string; is_active: boolean;
+  frequency: string; type: string; guaranteed: boolean;
   start_date: string | null; data_source: string | null; notes: string | null;
 }
 export interface ExpenseRow {
@@ -13,28 +13,25 @@ export interface ExpenseRow {
   essential: boolean; data_source: string | null; notes: string | null;
 }
 export interface AssetRow {
-  id: string; household_id: string; name: string; value: number;
-  category: string; appreciation_rate: number | null;
-  purchase_price: number | null; purchase_date: string | null;
-  data_source: string | null; notes: string | null;
+  id: string; household_id: string; name: string; type: string;
+  value: number; owner: string | null; institution: string | null;
+  liquidity: string | null; data_source: string | null; notes: string | null;
 }
 export interface DebtRow {
-  id: string; household_id: string; name: string; balance: number;
-  original_balance: number; interest_rate: number; minimum_payment: number;
-  category: string; lender: string | null; due_date: string | null;
-  data_source: string | null; notes: string | null;
+  id: string; household_id: string; name: string; type: string;
+  original_balance: number; current_balance: number; interest_rate: number;
+  minimum_payment: number; data_source: string | null; notes: string | null;
 }
 export interface RetirementAccountRow {
   id: string; household_id: string; name: string; type: string;
-  owner: string; balance: number; contribution_ytd: number | null;
-  employer_match_pct: number | null; annual_contribution_limit: number | null;
+  owner: string; current_balance: number; monthly_contribution: number | null;
+  employer_match: number | null; institution: string | null;
   data_source: string | null; notes: string | null;
 }
 export interface ProjectRow {
   id: string; household_id: string; name: string; description: string | null;
-  total_budget: number; amount_spent: number; category: string; status: string;
+  target_amount: number; current_amount: number; category: string;
   target_date: string | null; notes: string | null;
-  project_expenses?: ProjectExpenseRow[];
 }
 export interface ProjectExpenseRow {
   id: string; project_id: string; name: string; amount: number;
@@ -46,8 +43,9 @@ export interface ProjectExpenseRow {
 export const toIncome = (r: IncomeRow): Income => ({
   id: r.id, name: r.name, amount: r.amount,
   frequency: r.frequency as Income["frequency"],
-  category: r.category as Income["category"],
-  owner: r.owner, isActive: r.is_active,
+  category: r.type as Income["category"],
+  owner: "",
+  isActive: r.guaranteed,
   startDate: r.start_date ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
@@ -64,21 +62,18 @@ export const toExpense = (r: ExpenseRow): Expense => ({
 
 export const toAsset = (r: AssetRow): Asset => ({
   id: r.id, name: r.name, value: r.value,
-  category: r.category as Asset["category"],
-  appreciationRate: r.appreciation_rate ?? undefined,
-  purchasePrice: r.purchase_price ?? undefined,
-  purchaseDate: r.purchase_date ?? undefined,
+  category: r.type as Asset["category"],
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
 });
 
 export const toDebt = (r: DebtRow): Debt => ({
-  id: r.id, name: r.name, balance: r.balance,
+  id: r.id, name: r.name,
+  balance: r.current_balance,
   originalBalance: r.original_balance,
   interestRate: r.interest_rate,
   minimumPayment: r.minimum_payment,
-  category: r.category as Debt["category"],
-  lender: r.lender ?? undefined,
+  category: r.type as Debt["category"],
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
 });
@@ -86,10 +81,10 @@ export const toDebt = (r: DebtRow): Debt => ({
 export const toRetirementAccount = (r: RetirementAccountRow): RetirementAccount => ({
   id: r.id, name: r.name,
   type: r.type as RetirementAccount["type"],
-  owner: r.owner, balance: r.balance,
-  contributionYtd: r.contribution_ytd ?? undefined,
-  employerMatchPct: r.employer_match_pct ?? undefined,
-  annualContributionLimit: r.annual_contribution_limit ?? undefined,
+  owner: r.owner,
+  balance: r.current_balance,
+  contributionYtd: r.monthly_contribution ?? undefined,
+  employerMatchPct: r.employer_match ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
 });
@@ -102,21 +97,22 @@ export const toProjectExpense = (r: ProjectExpenseRow): ProjectExpense => ({
 export const toProject = (r: ProjectRow): Project => ({
   id: r.id, name: r.name,
   description: r.description ?? undefined,
-  totalBudget: r.total_budget,
-  amountSpent: r.amount_spent,
+  totalBudget: r.target_amount,
+  amountSpent: r.current_amount,
   category: r.category as Project["category"],
-  status: r.status as Project["status"],
+  status: "planned",
   targetDate: r.target_date ?? undefined,
   notes: r.notes ?? undefined,
-  expenses: (r.project_expenses ?? []).map(toProjectExpense),
+  expenses: [],
 });
 
 // ── To row (omit id and household_id — provided separately) ─────────────────
 
 export const fromIncome = (item: Omit<Income, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, amount: item.amount,
-  frequency: item.frequency, category: item.category,
-  owner: item.owner, is_active: item.isActive,
+  frequency: item.frequency,
+  type: item.category,
+  guaranteed: item.isActive,
   start_date: item.startDate ?? null,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
@@ -132,29 +128,30 @@ export const fromExpense = (item: Omit<Expense, "id">, householdId: string) => (
 
 export const fromAsset = (item: Omit<Asset, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, value: item.value,
-  category: item.category,
-  appreciation_rate: item.appreciationRate ?? null,
-  purchase_price: item.purchasePrice ?? null,
-  purchase_date: item.purchaseDate ?? null,
+  type: item.category,
+  owner: null, institution: null, liquidity: null,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
 
 export const fromDebt = (item: Omit<Debt, "id">, householdId: string) => ({
-  household_id: householdId, name: item.name, balance: item.balance,
-  original_balance: item.originalBalance, interest_rate: item.interestRate,
-  minimum_payment: item.minimumPayment, category: item.category,
-  lender: item.lender ?? null,
+  household_id: householdId, name: item.name,
+  type: item.category,
+  original_balance: item.originalBalance,
+  current_balance: item.balance,
+  interest_rate: item.interestRate,
+  minimum_payment: item.minimumPayment,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
 
 export const fromRetirementAccount = (item: Omit<RetirementAccount, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, type: item.type,
-  owner: item.owner, balance: item.balance,
-  contribution_ytd: item.contributionYtd ?? null,
-  employer_match_pct: item.employerMatchPct ?? null,
-  annual_contribution_limit: item.annualContributionLimit ?? null,
+  owner: item.owner,
+  current_balance: item.balance,
+  monthly_contribution: item.contributionYtd ?? null,
+  employer_match: item.employerMatchPct ?? null,
+  institution: null,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
@@ -162,7 +159,9 @@ export const fromRetirementAccount = (item: Omit<RetirementAccount, "id">, house
 export const fromProject = (item: Omit<Project, "id" | "expenses">, householdId: string) => ({
   household_id: householdId, name: item.name,
   description: item.description ?? null,
-  total_budget: item.totalBudget, amount_spent: item.amountSpent,
-  category: item.category, status: item.status,
-  target_date: item.targetDate ?? null, notes: item.notes ?? null,
+  category: item.category,
+  target_amount: item.totalBudget,
+  current_amount: item.amountSpent,
+  target_date: item.targetDate ?? null,
+  notes: item.notes ?? null,
 });
