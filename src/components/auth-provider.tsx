@@ -9,6 +9,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const clearSupabaseData = useFinanceStore((s) => s.clearSupabaseData);
 
   useEffect(() => {
+    // Rehydrate Zustand store from localStorage now that we're on the client.
+    // skipHydration: true prevents SSR/client mismatch (hydration error #418).
+    useFinanceStore.persist.rehydrate();
+
     const supabase = createClient();
 
     // React to auth events — INITIAL_SESSION fires on page reload for existing sessions

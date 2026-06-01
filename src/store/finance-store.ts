@@ -467,7 +467,11 @@ export const useFinanceStore = create<FinanceStore>()(
     }),
     {
       name: "family-ledger-store",
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        if (typeof window === "undefined") return undefined as unknown as Storage;
+        return localStorage;
+      }),
+      skipHydration: true,
       version: 1,
       migrate: (persistedState: unknown, version: number) => {
         const s = persistedState as Record<string, unknown>;
