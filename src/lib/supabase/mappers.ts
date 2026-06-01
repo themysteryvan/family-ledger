@@ -137,10 +137,11 @@ export const fromAsset = (item: Omit<Asset, "id">, householdId: string) => ({
 export const fromDebt = (item: Omit<Debt, "id">, householdId: string) => ({
   household_id: householdId, name: item.name,
   type: item.category,
-  original_balance: item.originalBalance,
-  current_balance: item.balance,
+  original_balance: item.balance ?? 0,
+  current_balance: item.balance ?? 0,
   interest_rate: item.interestRate,
-  minimum_payment: item.minimumPayment,
+  monthly_payment: item.minimumPayment ?? 0,
+  minimum_payment: item.minimumPayment ?? 0,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
