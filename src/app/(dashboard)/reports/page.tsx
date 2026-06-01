@@ -16,8 +16,12 @@ import { CardTitle } from "@/components/ui/card";
 import { buildFinancialSummary, fmt, fmtPct } from "@/lib/finance";
 import { useFinanceStore } from "@/store/finance-store";
 import { format, subMonths } from "date-fns";
+import { useState, useEffect } from "react";
 
 export default function ReportsPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const incomes = useFinanceStore((s) => s.incomes);
   const expenses = useFinanceStore((s) => s.expenses);
   const assets = useFinanceStore((s) => s.assets);
@@ -27,11 +31,8 @@ export default function ReportsPage() {
   const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
 
-  // Build 6-month chart data using current figures for the current month.
-  // Historical months show dashes until real transaction history is available.
-  const now = new Date();
-  const monthlyData = Array.from({ length: 6 }, (_, i) => {
-    const d = subMonths(now, 5 - i);
+  const monthlyData = mounted ? Array.from({ length: 6 }, (_, i) => {
+    const d = subMonths(new Date(), 5 - i);
     const isCurrent = i === 5;
     return {
       month: format(d, "MMM"),
@@ -40,7 +41,7 @@ export default function ReportsPage() {
       savings: isCurrent ? Math.round(summary.monthlyCashFlow) : 0,
       isCurrent,
     };
-  });
+  }) : [];
 
   return (
     <div className="space-y-6">

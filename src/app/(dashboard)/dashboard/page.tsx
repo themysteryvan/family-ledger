@@ -35,6 +35,7 @@ import {
 } from "@/lib/finance";
 import { useFinanceStore } from "@/store/finance-store";
 import { format } from "date-fns";
+import { useState, useEffect } from "react";
 
 const PIE_COLORS: Record<string, string> = {
   housing: "#3b82f6",
@@ -53,13 +54,16 @@ const PIE_COLORS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const { incomes, expenses, assets, debts, retirementAccounts, householdName, isAuthenticatedUser, isLoadedFromSupabase } = useFinanceStore();
   const isEmpty = isAuthenticatedUser && isLoadedFromSupabase &&
     incomes.length === 0 && expenses.length === 0 && assets.length === 0 && debts.length === 0;
 
   const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
-  const netWorthHistory = buildNetWorthHistory(summary.totalAssets, summary.totalDebt);
+  const netWorthHistory = mounted ? buildNetWorthHistory(summary.totalAssets, summary.totalDebt) : [];
 
   const categoryTotals = expenses.reduce((acc, e) => {
     const m = toMonthly(e.amount, e.frequency);
@@ -75,9 +79,11 @@ export default function DashboardPage() {
     }))
     .sort((a, b) => b.value - a.value);
 
-  const subtitle = isAuthenticatedUser
-    ? (householdName ? `${householdName} · ` : "") + format(new Date(), "MMMM yyyy")
-    : "Demo · " + format(new Date(), "MMMM yyyy");
+  const subtitle = mounted
+    ? (isAuthenticatedUser
+        ? (householdName ? `${householdName} · ` : "") + format(new Date(), "MMMM yyyy")
+        : "Demo · " + format(new Date(), "MMMM yyyy"))
+    : "";
 
   return (
     <div className="space-y-6">

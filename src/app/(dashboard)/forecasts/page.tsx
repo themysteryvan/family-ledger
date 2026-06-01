@@ -15,6 +15,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { buildFinancialSummary, fmt } from "@/lib/finance";
 import { useFinanceStore } from "@/store/finance-store";
+import { useState, useEffect } from "react";
 
 function buildForecast(totalAssets: number, totalDebt: number, monthlyCashFlow: number, months: number) {
   const data = [];
@@ -37,6 +38,9 @@ function buildForecast(totalAssets: number, totalDebt: number, monthlyCashFlow: 
 }
 
 export default function ForecastsPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const incomes = useFinanceStore((s) => s.incomes);
   const expenses = useFinanceStore((s) => s.expenses);
   const assets = useFinanceStore((s) => s.assets);
@@ -45,10 +49,10 @@ export default function ForecastsPage() {
 
   const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
-  const forecast12 = buildForecast(summary.totalAssets, summary.totalDebt, summary.monthlyCashFlow, 12);
-  const forecast60 = buildForecast(summary.totalAssets, summary.totalDebt, summary.monthlyCashFlow, 60);
-  const projectedNetWorth1yr = forecast12[forecast12.length - 1].netWorth;
-  const projectedNetWorth5yr = forecast60[forecast60.length - 1].netWorth;
+  const forecast12 = mounted ? buildForecast(summary.totalAssets, summary.totalDebt, summary.monthlyCashFlow, 12) : [];
+  const forecast60 = mounted ? buildForecast(summary.totalAssets, summary.totalDebt, summary.monthlyCashFlow, 60) : [];
+  const projectedNetWorth1yr = forecast12.length ? forecast12[forecast12.length - 1].netWorth : 0;
+  const projectedNetWorth5yr = forecast60.length ? forecast60[forecast60.length - 1].netWorth : 0;
 
   return (
     <div className="space-y-6">

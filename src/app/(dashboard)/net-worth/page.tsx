@@ -17,8 +17,12 @@ import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
 import { buildFinancialSummary, buildNetWorthHistory, totalAssets, totalDebt, fmt } from "@/lib/finance";
 import { useFinanceStore } from "@/store/finance-store";
+import { useState, useEffect } from "react";
 
 export default function NetWorthPage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   const incomes = useFinanceStore((s) => s.incomes);
   const expenses = useFinanceStore((s) => s.expenses);
   const assets = useFinanceStore((s) => s.assets);
@@ -27,7 +31,7 @@ export default function NetWorthPage() {
 
   const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
-  const history = buildNetWorthHistory(summary.totalAssets, summary.totalDebt, 12);
+  const history = mounted ? buildNetWorthHistory(summary.totalAssets, summary.totalDebt, 12) : [];
   const firstNetWorth = history[0]?.netWorth ?? 0;
   const netWorthChange = summary.netWorth - firstNetWorth;
   const netWorthChangePct = firstNetWorth !== 0 ? (netWorthChange / Math.abs(firstNetWorth)) * 100 : 0;
