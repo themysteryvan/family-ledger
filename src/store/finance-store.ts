@@ -24,9 +24,9 @@ interface MigrableState {
 }
 
 async function migrateLocalDataToSupabase(state: MigrableState, householdId: string) {
+  if (typeof window === "undefined") return;
   try {
-    if (typeof localStorage !== "undefined" &&
-        localStorage.getItem("family-ledger-migrated") === "true") return;
+    if (localStorage.getItem("family-ledger-migrated") === "true") return;
   } catch { return; }
 
   const hasData = state.incomes.length > 0 || state.expenses.length > 0 ||
