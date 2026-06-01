@@ -129,7 +129,7 @@ export const fromExpense = (item: Omit<Expense, "id">, householdId: string) => (
 export const fromAsset = (item: Omit<Asset, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, value: item.value,
   type: item.category,
-  owner: null, institution: null, liquidity: null,
+  owner: null, institution: null, liquidity: "low",
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
