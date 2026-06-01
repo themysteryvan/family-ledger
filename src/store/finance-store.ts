@@ -23,11 +23,35 @@ interface MigrableState {
   debts: Debt[]; retirementAccounts: RetirementAccount[]; projects: Project[];
 }
 
-async function migrateLocalDataToSupabase(state: MigrableState, householdId: string) {
+async function migrateLocalDataToSupabase(householdId: string) {
   if (typeof window === "undefined") return;
   try {
     if (localStorage.getItem("family-ledger-migrated") === "true") return;
   } catch { return; }
+
+  console.log("[finance-store] Starting migration...");
+
+  // Read directly from localStorage — Zustand may not be rehydrated yet when
+  // this runs, so we cannot rely on get() returning the persisted data.
+  let state: MigrableState = { incomes: [], expenses: [], assets: [], debts: [], retirementAccounts: [], projects: [] };
+  try {
+    const raw = localStorage.getItem("family-ledger-store");
+    if (raw) {
+      const parsed = JSON.parse(raw) as { state?: Partial<MigrableState> };
+      const s = parsed.state ?? {};
+      state = {
+        incomes: s.incomes ?? [],
+        expenses: s.expenses ?? [],
+        assets: s.assets ?? [],
+        debts: s.debts ?? [],
+        retirementAccounts: s.retirementAccounts ?? [],
+        projects: s.projects ?? [],
+      };
+    }
+  } catch (err) {
+    console.error("[finance-store] Could not read localStorage for migration:", err);
+    return;
+  }
 
   const hasData = state.incomes.length > 0 || state.expenses.length > 0 ||
     state.assets.length > 0 || state.debts.length > 0 ||
@@ -181,7 +205,7 @@ export const useFinanceStore = create<FinanceStore>()(
     });
 
     // 3. One-time migration: push existing localStorage data into Supabase
-    await migrateLocalDataToSupabase(get(), householdId);
+    await migrateLocalDataToSupabase(householdId);
 
     // 4. Snapshot existing state — used as fallback if individual table fetches fail
     const existing = get();
