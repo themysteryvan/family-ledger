@@ -30,18 +30,18 @@ import { useFinanceStore } from "@/store/finance-store";
 const navItems = [
   { label: "Advisor", href: "/advisor", icon: Sparkles },
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Income", href: "/income", icon: TrendingUp },
   { label: "Expenses", href: "/expenses", icon: Receipt },
-  { label: "Import", href: "/import", icon: Upload },
-  { label: "Budget", href: "/budget", icon: Target },
+  { label: "Income", href: "/income", icon: TrendingUp },
   { label: "Assets", href: "/assets", icon: Building2 },
   { label: "Debts", href: "/debts", icon: CreditCard },
-  { label: "Net Worth", href: "/net-worth", icon: BarChart3 },
-  { label: "Projects", href: "/projects", icon: FolderOpen },
   { label: "Retirement", href: "/retirement", icon: PiggyBank },
+  { label: "Net Worth", href: "/net-worth", icon: BarChart3 },
+  { label: "Budget", href: "/budget", icon: Target },
+  { label: "Projects", href: "/projects", icon: FolderOpen },
   { label: "Forecasts", href: "/forecasts", icon: LineChart },
   { label: "Reports", href: "/reports", icon: FileText },
   { label: "Health Score", href: "/health-score", icon: HeartPulse },
+  { label: "Import", href: "/import", icon: Upload },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
