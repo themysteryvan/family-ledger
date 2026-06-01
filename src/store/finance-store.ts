@@ -67,7 +67,7 @@ async function migrateLocalDataToSupabase(householdId: string) {
     // .then(() => null) converts each PromiseLike builder into a real Promise
     const ops = [
       state.incomes.length > 0
-        ? supabase.from("incomes").upsert(
+        ? supabase.from("income").upsert(
             state.incomes.map(({ id, ...r }) => ({ id, ...fromIncome(r, householdId) }))
           ).then(() => null)
         : null,
@@ -219,11 +219,11 @@ export const useFinanceStore = create<FinanceStore>()(
       { data: projectRows,    error: projectErr },
       { data: retirementRows, error: retirementErr },
     ] = await Promise.all([
-      supabase.from("incomes").select("*").eq("household_id", householdId),
+      supabase.from("income").select("*").eq("household_id", householdId),
       supabase.from("expenses").select("*").eq("household_id", householdId),
       supabase.from("assets").select("*").eq("household_id", householdId),
       supabase.from("debts").select("*").eq("household_id", householdId),
-      supabase.from("projects").select("*, project_expenses(*)").eq("household_id", householdId),
+      supabase.from("projects").select("*").eq("household_id", householdId),
       supabase.from("retirement_accounts").select("*").eq("household_id", householdId),
     ]);
 
@@ -277,7 +277,7 @@ export const useFinanceStore = create<FinanceStore>()(
     set((s) => ({ incomes: [...s.incomes, { ...item, id }] }));
     const { householdId } = get();
     if (householdId) {
-      createClient().from("incomes").insert({ id, ...fromIncome(item, householdId) }).then(({ error }) => {
+      createClient().from("income").insert({ id, ...fromIncome(item, householdId) }).then(({ error }) => {
         if (error) console.error("[finance-store] Failed to insert income:", error);
       });
     }
@@ -290,7 +290,7 @@ export const useFinanceStore = create<FinanceStore>()(
       const updated = get().incomes.find((i) => i.id === id);
       if (updated) {
         const { id: _id, ...rest } = updated;
-        createClient().from("incomes").update(fromIncome(rest, householdId)).eq("id", id).then(({ error }) => {
+        createClient().from("income").update(fromIncome(rest, householdId)).eq("id", id).then(({ error }) => {
           if (error) console.error("[finance-store] Failed to update income:", error);
         });
       }
@@ -300,7 +300,7 @@ export const useFinanceStore = create<FinanceStore>()(
   deleteIncome(id) {
     set((s) => ({ incomes: s.incomes.filter((i) => i.id !== id) }));
     if (get().householdId) {
-      createClient().from("incomes").delete().eq("id", id).then(({ error }) => {
+      createClient().from("income").delete().eq("id", id).then(({ error }) => {
         if (error) console.error("[finance-store] Failed to delete income:", error);
       });
     }
