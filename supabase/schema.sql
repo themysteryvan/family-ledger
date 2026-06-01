@@ -130,6 +130,27 @@ create policy "Users can manage project expenses"
     project_id in (
       select p.id from projects p
       join households h on h.id = p.household_id
-      where h.user_id = auth.uid()
+      where h.owner_id = auth.uid()
     )
+  );
+
+-- Retirement Accounts
+create table if not exists retirement_accounts (
+  id uuid primary key default gen_random_uuid(),
+  household_id uuid references households(id) on delete cascade not null,
+  name text not null,
+  type text not null,
+  owner text not null default '',
+  balance numeric not null default 0,
+  contribution_ytd numeric,
+  employer_match_pct numeric,
+  annual_contribution_limit numeric,
+  data_source varchar(100) default 'Manual Entry',
+  notes text,
+  created_at timestamptz default now()
+);
+alter table retirement_accounts enable row level security;
+create policy "Users can manage retirement accounts in their household"
+  on retirement_accounts for all using (
+    household_id in (select id from households where owner_id = auth.uid())
   );

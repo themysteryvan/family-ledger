@@ -3,15 +3,86 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import type { Income, Expense, Asset, Debt, Project, RetirementAccount } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import {
-  toIncome, toExpense, toAsset, toDebt, toProject,
-  fromIncome, fromExpense, fromAsset, fromDebt, fromProject,
+  toIncome, toExpense, toAsset, toDebt, toProject, toRetirementAccount,
+  fromIncome, fromExpense, fromAsset, fromDebt, fromProject, fromRetirementAccount,
   type IncomeRow, type ExpenseRow, type AssetRow, type DebtRow, type ProjectRow,
+  type RetirementAccountRow,
 } from "@/lib/supabase/mappers";
 
 function uid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
   return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
 }
+
+// ── One-time migration: push existing localStorage data into Supabase ─────────
+// Runs once per device after first successful login. Uses upsert so re-running
+// is safe. Sets 'family-ledger-migrated' flag to prevent future runs.
+
+interface MigrableState {
+  incomes: Income[]; expenses: Expense[]; assets: Asset[];
+  debts: Debt[]; retirementAccounts: RetirementAccount[]; projects: Project[];
+}
+
+async function migrateLocalDataToSupabase(state: MigrableState, householdId: string) {
+  try {
+    if (typeof localStorage !== "undefined" &&
+        localStorage.getItem("family-ledger-migrated") === "true") return;
+  } catch { return; }
+
+  const hasData = state.incomes.length > 0 || state.expenses.length > 0 ||
+    state.assets.length > 0 || state.debts.length > 0 ||
+    state.retirementAccounts.length > 0;
+
+  if (!hasData) {
+    try { localStorage.setItem("family-ledger-migrated", "true"); } catch {}
+    return;
+  }
+
+  const supabase = createClient();
+  try {
+    // .then(() => null) converts each PromiseLike builder into a real Promise
+    const ops = [
+      state.incomes.length > 0
+        ? supabase.from("incomes").upsert(
+            state.incomes.map(({ id, ...r }) => ({ id, ...fromIncome(r, householdId) }))
+          ).then(() => null)
+        : null,
+      state.expenses.length > 0
+        ? supabase.from("expenses").upsert(
+            state.expenses.map(({ id, ...r }) => ({ id, ...fromExpense(r, householdId) }))
+          ).then(() => null)
+        : null,
+      state.assets.length > 0
+        ? supabase.from("assets").upsert(
+            state.assets.map(({ id, ...r }) => ({ id, ...fromAsset(r, householdId) }))
+          ).then(() => null)
+        : null,
+      state.debts.length > 0
+        ? supabase.from("debts").upsert(
+            state.debts.map(({ id, ...r }) => ({ id, ...fromDebt(r, householdId) }))
+          ).then(() => null)
+        : null,
+      state.retirementAccounts.length > 0
+        ? supabase.from("retirement_accounts").upsert(
+            state.retirementAccounts.map(({ id, ...r }) => ({ id, ...fromRetirementAccount(r, householdId) }))
+          ).then(() => null)
+        : null,
+      state.projects.length > 0
+        ? supabase.from("projects").upsert(
+            state.projects.map(({ id, expenses: _exp, ...r }) => ({ id, ...fromProject(r, householdId) }))
+          ).then(() => null)
+        : null,
+    ].filter(Boolean);
+
+    await Promise.all(ops);
+    try { localStorage.setItem("family-ledger-migrated", "true"); } catch {}
+    console.log("[finance-store] Migration to Supabase complete");
+  } catch (err) {
+    console.error("[finance-store] Migration failed (will retry next login):", err);
+  }
+}
+
+// ── Store interface ───────────────────────────────────────────────────────────
 
 interface FinanceStore {
   incomes: Income[];
@@ -78,7 +149,7 @@ export const useFinanceStore = create<FinanceStore>()(
 
     const supabase = createClient();
 
-    // Get or create household
+    // 1. Get or create household (owner_id is the correct column)
     let { data: household, error: householdErr } = await supabase
       .from("households")
       .select("id, name")
@@ -99,45 +170,55 @@ export const useFinanceStore = create<FinanceStore>()(
       household = created;
     }
 
-    // If household fetch/create failed, leave existing localStorage state intact
+    // If household unavailable, leave existing localStorage state intact
     if (!household) return;
     const householdId = household.id;
 
-    // Household confirmed — safe to replace local data with Supabase truth
-    set({ incomes: [], expenses: [], assets: [], debts: [], projects: [] });
+    // 2. Expose householdId immediately so any in-flight writes get the right id
+    set({
+      householdId,
+      householdName: (household as { id: string; name?: string }).name ?? null,
+    });
 
+    // 3. One-time migration: push existing localStorage data into Supabase
+    await migrateLocalDataToSupabase(get(), householdId);
+
+    // 4. Snapshot existing state — used as fallback if individual table fetches fail
+    const existing = get();
+
+    // 5. Fetch all 6 tables in parallel
     const [
-      { data: incomeRows, error: incomeErr },
-      { data: expenseRows, error: expenseErr },
-      { data: assetRows, error: assetErr },
-      { data: debtRows, error: debtErr },
-      { data: projectRows, error: projectErr },
+      { data: incomeRows,     error: incomeErr },
+      { data: expenseRows,    error: expenseErr },
+      { data: assetRows,      error: assetErr },
+      { data: debtRows,       error: debtErr },
+      { data: projectRows,    error: projectErr },
+      { data: retirementRows, error: retirementErr },
     ] = await Promise.all([
       supabase.from("incomes").select("*").eq("household_id", householdId),
       supabase.from("expenses").select("*").eq("household_id", householdId),
       supabase.from("assets").select("*").eq("household_id", householdId),
       supabase.from("debts").select("*").eq("household_id", householdId),
-      supabase
-        .from("projects")
-        .select("*, project_expenses(*)")
-        .eq("household_id", householdId),
+      supabase.from("projects").select("*, project_expenses(*)").eq("household_id", householdId),
+      supabase.from("retirement_accounts").select("*").eq("household_id", householdId),
     ]);
 
-    if (incomeErr) console.error("[finance-store] incomes fetch error:", incomeErr);
-    if (expenseErr) console.error("[finance-store] expenses fetch error:", expenseErr);
-    if (assetErr) console.error("[finance-store] assets fetch error:", assetErr);
-    if (debtErr) console.error("[finance-store] debts fetch error:", debtErr);
-    if (projectErr) console.error("[finance-store] projects fetch error:", projectErr);
+    if (incomeErr)     console.error("[finance-store] incomes fetch error:", incomeErr);
+    if (expenseErr)    console.error("[finance-store] expenses fetch error:", expenseErr);
+    if (assetErr)      console.error("[finance-store] assets fetch error:", assetErr);
+    if (debtErr)       console.error("[finance-store] debts fetch error:", debtErr);
+    if (projectErr)    console.error("[finance-store] projects fetch error:", projectErr);
+    if (retirementErr) console.error("[finance-store] retirement_accounts fetch error:", retirementErr);
 
+    // 6. Overwrite store with Supabase truth — fall back to existing data on error
     set({
-      householdId,
-      householdName: (household as { id: string; name?: string }).name ?? null,
       isLoadedFromSupabase: true,
-      incomes: incomeErr ? [] : (incomeRows as IncomeRow[]).map(toIncome),
-      expenses: expenseErr ? [] : (expenseRows as ExpenseRow[]).map(toExpense),
-      assets: assetErr ? [] : (assetRows as AssetRow[]).map(toAsset),
-      debts: debtErr ? [] : (debtRows as DebtRow[]).map(toDebt),
-      projects: projectErr ? [] : (projectRows as ProjectRow[]).map(toProject),
+      incomes:            incomeErr     ? existing.incomes            : (incomeRows     as IncomeRow[]).map(toIncome),
+      expenses:           expenseErr    ? existing.expenses           : (expenseRows    as ExpenseRow[]).map(toExpense),
+      assets:             assetErr      ? existing.assets             : (assetRows      as AssetRow[]).map(toAsset),
+      debts:              debtErr       ? existing.debts              : (debtRows       as DebtRow[]).map(toDebt),
+      projects:           projectErr    ? existing.projects           : (projectRows    as ProjectRow[]).map(toProject),
+      retirementAccounts: retirementErr ? existing.retirementAccounts : (retirementRows as RetirementAccountRow[]).map(toRetirementAccount),
     });
   },
 
@@ -172,7 +253,9 @@ export const useFinanceStore = create<FinanceStore>()(
     set((s) => ({ incomes: [...s.incomes, { ...item, id }] }));
     const { householdId } = get();
     if (householdId) {
-      createClient().from("incomes").insert({ id, ...fromIncome(item, householdId) }).then();
+      createClient().from("incomes").insert({ id, ...fromIncome(item, householdId) }).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to insert income:", error);
+      });
     }
   },
 
@@ -183,7 +266,9 @@ export const useFinanceStore = create<FinanceStore>()(
       const updated = get().incomes.find((i) => i.id === id);
       if (updated) {
         const { id: _id, ...rest } = updated;
-        createClient().from("incomes").update(fromIncome(rest, householdId)).eq("id", id).then();
+        createClient().from("incomes").update(fromIncome(rest, householdId)).eq("id", id).then(({ error }) => {
+          if (error) console.error("[finance-store] Failed to update income:", error);
+        });
       }
     }
   },
@@ -191,7 +276,9 @@ export const useFinanceStore = create<FinanceStore>()(
   deleteIncome(id) {
     set((s) => ({ incomes: s.incomes.filter((i) => i.id !== id) }));
     if (get().householdId) {
-      createClient().from("incomes").delete().eq("id", id).then();
+      createClient().from("incomes").delete().eq("id", id).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to delete income:", error);
+      });
     }
   },
 
@@ -202,7 +289,9 @@ export const useFinanceStore = create<FinanceStore>()(
     set((s) => ({ expenses: [...s.expenses, { ...item, id }] }));
     const { householdId } = get();
     if (householdId) {
-      createClient().from("expenses").insert({ id, ...fromExpense(item, householdId) }).then();
+      createClient().from("expenses").insert({ id, ...fromExpense(item, householdId) }).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to insert expense:", error);
+      });
     }
   },
 
@@ -213,7 +302,9 @@ export const useFinanceStore = create<FinanceStore>()(
       const updated = get().expenses.find((e) => e.id === id);
       if (updated) {
         const { id: _id, ...rest } = updated;
-        createClient().from("expenses").update(fromExpense(rest, householdId)).eq("id", id).then();
+        createClient().from("expenses").update(fromExpense(rest, householdId)).eq("id", id).then(({ error }) => {
+          if (error) console.error("[finance-store] Failed to update expense:", error);
+        });
       }
     }
   },
@@ -221,7 +312,9 @@ export const useFinanceStore = create<FinanceStore>()(
   deleteExpense(id) {
     set((s) => ({ expenses: s.expenses.filter((e) => e.id !== id) }));
     if (get().householdId) {
-      createClient().from("expenses").delete().eq("id", id).then();
+      createClient().from("expenses").delete().eq("id", id).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to delete expense:", error);
+      });
     }
   },
 
@@ -232,7 +325,9 @@ export const useFinanceStore = create<FinanceStore>()(
     set((s) => ({ assets: [...s.assets, { ...item, id }] }));
     const { householdId } = get();
     if (householdId) {
-      createClient().from("assets").insert({ id, ...fromAsset(item, householdId) }).then();
+      createClient().from("assets").insert({ id, ...fromAsset(item, householdId) }).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to insert asset:", error);
+      });
     }
   },
 
@@ -243,7 +338,9 @@ export const useFinanceStore = create<FinanceStore>()(
       const updated = get().assets.find((a) => a.id === id);
       if (updated) {
         const { id: _id, ...rest } = updated;
-        createClient().from("assets").update(fromAsset(rest, householdId)).eq("id", id).then();
+        createClient().from("assets").update(fromAsset(rest, householdId)).eq("id", id).then(({ error }) => {
+          if (error) console.error("[finance-store] Failed to update asset:", error);
+        });
       }
     }
   },
@@ -251,7 +348,9 @@ export const useFinanceStore = create<FinanceStore>()(
   deleteAsset(id) {
     set((s) => ({ assets: s.assets.filter((a) => a.id !== id) }));
     if (get().householdId) {
-      createClient().from("assets").delete().eq("id", id).then();
+      createClient().from("assets").delete().eq("id", id).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to delete asset:", error);
+      });
     }
   },
 
@@ -262,7 +361,9 @@ export const useFinanceStore = create<FinanceStore>()(
     set((s) => ({ debts: [...s.debts, { ...item, id }] }));
     const { householdId } = get();
     if (householdId) {
-      createClient().from("debts").insert({ id, ...fromDebt(item, householdId) }).then();
+      createClient().from("debts").insert({ id, ...fromDebt(item, householdId) }).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to insert debt:", error);
+      });
     }
   },
 
@@ -273,7 +374,9 @@ export const useFinanceStore = create<FinanceStore>()(
       const updated = get().debts.find((d) => d.id === id);
       if (updated) {
         const { id: _id, ...rest } = updated;
-        createClient().from("debts").update(fromDebt(rest, householdId)).eq("id", id).then();
+        createClient().from("debts").update(fromDebt(rest, householdId)).eq("id", id).then(({ error }) => {
+          if (error) console.error("[finance-store] Failed to update debt:", error);
+        });
       }
     }
   },
@@ -281,7 +384,9 @@ export const useFinanceStore = create<FinanceStore>()(
   deleteDebt(id) {
     set((s) => ({ debts: s.debts.filter((d) => d.id !== id) }));
     if (get().householdId) {
-      createClient().from("debts").delete().eq("id", id).then();
+      createClient().from("debts").delete().eq("id", id).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to delete debt:", error);
+      });
     }
   },
 
@@ -292,8 +397,10 @@ export const useFinanceStore = create<FinanceStore>()(
     set((s) => ({ projects: [...s.projects, { ...item, id }] }));
     const { householdId } = get();
     if (householdId) {
-      const { expenses: projectExpenses, ...rest } = item;
-      createClient().from("projects").insert({ id, ...fromProject(rest, householdId) }).then();
+      const { expenses: _exp, ...rest } = item;
+      createClient().from("projects").insert({ id, ...fromProject(rest, householdId) }).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to insert project:", error);
+      });
     }
   },
 
@@ -304,7 +411,9 @@ export const useFinanceStore = create<FinanceStore>()(
       const updated = get().projects.find((p) => p.id === id);
       if (updated) {
         const { id: _id, expenses: _exp, ...rest } = updated;
-        createClient().from("projects").update(fromProject(rest, householdId)).eq("id", id).then();
+        createClient().from("projects").update(fromProject(rest, householdId)).eq("id", id).then(({ error }) => {
+          if (error) console.error("[finance-store] Failed to update project:", error);
+        });
       }
     }
   },
@@ -312,7 +421,9 @@ export const useFinanceStore = create<FinanceStore>()(
   deleteProject(id) {
     set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
     if (get().householdId) {
-      createClient().from("projects").delete().eq("id", id).then();
+      createClient().from("projects").delete().eq("id", id).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to delete project:", error);
+      });
     }
   },
 
@@ -321,16 +432,37 @@ export const useFinanceStore = create<FinanceStore>()(
   addRetirementAccount(item) {
     const id = uid();
     set((s) => ({ retirementAccounts: [...s.retirementAccounts, { ...item, id }] }));
+    const { householdId } = get();
+    if (householdId) {
+      createClient().from("retirement_accounts").insert({ id, ...fromRetirementAccount(item, householdId) }).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to insert retirement account:", error);
+      });
+    }
   },
 
   updateRetirementAccount(id, patch) {
     set((s) => ({
       retirementAccounts: s.retirementAccounts.map((a) => (a.id === id ? { ...a, ...patch } : a)),
     }));
+    const { householdId } = get();
+    if (householdId) {
+      const updated = get().retirementAccounts.find((a) => a.id === id);
+      if (updated) {
+        const { id: _id, ...rest } = updated;
+        createClient().from("retirement_accounts").update(fromRetirementAccount(rest, householdId)).eq("id", id).then(({ error }) => {
+          if (error) console.error("[finance-store] Failed to update retirement account:", error);
+        });
+      }
+    }
   },
 
   deleteRetirementAccount(id) {
     set((s) => ({ retirementAccounts: s.retirementAccounts.filter((a) => a.id !== id) }));
+    if (get().householdId) {
+      createClient().from("retirement_accounts").delete().eq("id", id).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to delete retirement account:", error);
+      });
+    }
   },
     }),
     {
