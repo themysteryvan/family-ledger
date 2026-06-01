@@ -9,8 +9,8 @@ export interface IncomeRow {
 }
 export interface ExpenseRow {
   id: string; household_id: string; name: string; amount: number;
-  frequency: string; category: string; is_fixed: boolean;
-  is_essential: boolean; data_source: string | null; notes: string | null;
+  frequency: string; category: string; fixed: boolean;
+  essential: boolean; data_source: string | null; notes: string | null;
 }
 export interface AssetRow {
   id: string; household_id: string; name: string; value: number;
@@ -57,7 +57,7 @@ export const toExpense = (r: ExpenseRow): Expense => ({
   id: r.id, name: r.name, amount: r.amount,
   frequency: r.frequency as Expense["frequency"],
   category: r.category as Expense["category"],
-  isFixed: r.is_fixed, isEssential: r.is_essential,
+  isFixed: r.fixed, isEssential: r.essential,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
 });
@@ -125,7 +125,7 @@ export const fromIncome = (item: Omit<Income, "id">, householdId: string) => ({
 export const fromExpense = (item: Omit<Expense, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, amount: item.amount,
   frequency: item.frequency, category: item.category,
-  is_fixed: item.isFixed, is_essential: item.isEssential,
+  fixed: item.isFixed, essential: item.isEssential,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
