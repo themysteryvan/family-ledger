@@ -126,10 +126,19 @@ export const fromExpense = (item: Omit<Expense, "id">, householdId: string) => (
   notes: item.notes ?? null,
 });
 
+function assetLiquidity(category: string): string {
+  if (category === "cash") return "cash";
+  if (category === "real_estate") return "illiquid";
+  if (category === "vehicle") return "semi-liquid";
+  if (category === "investment" || category === "retirement" || category === "crypto") return "liquid";
+  return "liquid";
+}
+
 export const fromAsset = (item: Omit<Asset, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, value: item.value,
   type: item.category,
-  owner: null, institution: null, liquidity: "low",
+  owner: null, institution: null,
+  liquidity: assetLiquidity(item.category),
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
