@@ -130,7 +130,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Monthly Income" value={fmt(summary.monthlyIncome)} sub="All sources combined" icon={TrendingUp} accent="green" trend="up" trendLabel="~$173k annual" />
         <StatCard title="Monthly Expenses" value={fmt(summary.monthlyExpenses)} sub="Fixed + variable" icon={TrendingDown} accent="red" trend="neutral" trendLabel="vs $12,500 budgeted" />
-        <StatCard title="Monthly Cash Flow" value={fmt(summary.monthlyCashFlow)} sub="After all expenses" icon={Wallet} accent={summary.monthlyCashFlow >= 0 ? "blue" : "red"} trend={summary.monthlyCashFlow >= 0 ? "up" : "down"} trendLabel={fmtPct(summary.savingsRate) + " savings rate"} />
+        <StatCard title="Min. Debt Payments" value={fmt(debts.reduce((s, d) => s + (d.minimumPayment ?? 0), 0))} sub="Monthly obligations" icon={CreditCard} accent="amber" />
+        <StatCard title="Monthly Cash Flow" value={fmt(summary.monthlyCashFlow)} sub="After expenses & debt payments" icon={Wallet} accent={summary.monthlyCashFlow >= 0 ? "blue" : "red"} trend={summary.monthlyCashFlow >= 0 ? "up" : "down"} trendLabel={fmtPct(summary.savingsRate) + " savings rate"} />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Net Worth" value={fmt(summary.netWorth, true)} sub="Assets minus debts" icon={PiggyBank} accent="purple" trend="up" trendLabel="Growing" />
       </div>
 
