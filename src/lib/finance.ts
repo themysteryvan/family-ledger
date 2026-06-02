@@ -60,17 +60,19 @@ export function buildFinancialSummary(
 ): FinancialSummary {
   const income = monthlyIncome(incomes);
   const expense = monthlyExpenses(expenses);
+  const debtPayments = debts.reduce((sum, d) => sum + (d.minimumPayment ?? 0), 0);
   const assets_ = totalAssets(assets) + retirementTotal;
   const debt = totalDebt(debts);
+  const cashFlow = income - expense - debtPayments;
 
   return {
     monthlyIncome: income,
     monthlyExpenses: expense,
-    monthlyCashFlow: income - expense,
+    monthlyCashFlow: cashFlow,
     totalAssets: assets_,
     totalDebt: debt,
     netWorth: assets_ - debt,
-    savingsRate: income > 0 ? ((income - expense) / income) * 100 : 0,
+    savingsRate: income > 0 ? (cashFlow / income) * 100 : 0,
     debtToIncomeRatio: income > 0 ? (debt / (income * 12)) * 100 : 0,
     expenseRatio: income > 0 ? (expense / income) * 100 : 0,
   };
