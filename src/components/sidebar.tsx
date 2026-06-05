@@ -22,6 +22,7 @@ import {
   PiggyBank,
   LogIn,
   LogOut,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
@@ -45,7 +46,7 @@ const navItems = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -81,6 +82,15 @@ export function Sidebar() {
         <span className="font-semibold text-sm tracking-tight" style={{ color: "var(--text-primary)" }}>
           Standing Ledger
         </span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="ml-auto p-1 rounded-md hover:bg-[var(--bg-elevated)] transition-colors md:hidden"
+            aria-label="Close menu"
+          >
+            <X size={16} style={{ color: "var(--text-muted)" }} />
+          </button>
+        )}
       </div>
 
       {/* Household badge */}
@@ -113,6 +123,7 @@ export function Sidebar() {
               <li key={href}>
                 <Link
                   href={href}
+                  onClick={onClose}
                   className={cn(
                     "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                     active ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"

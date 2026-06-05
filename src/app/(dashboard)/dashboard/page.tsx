@@ -127,7 +127,7 @@ export default function DashboardPage() {
       )}
 
       {!isEmpty && <>
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Monthly Income" value={fmt(summary.monthlyIncome)} sub="All sources combined" icon={TrendingUp} accent="green" trend="up" trendLabel="~$173k annual" />
         <StatCard title="Monthly Expenses" value={fmt(summary.monthlyExpenses)} sub="Fixed + variable" icon={TrendingDown} accent="red" trend="neutral" trendLabel="vs $12,500 budgeted" />
         <StatCard title="Min. Debt Payments" value={fmt(debts.reduce((s, d) => s + (d.minimumPayment ?? 0), 0))} sub="Monthly obligations" icon={CreditCard} accent="amber" />
