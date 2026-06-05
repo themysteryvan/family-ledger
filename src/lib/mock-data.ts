@@ -1,30 +1,32 @@
-import type { Income, Expense, Asset, Debt, Project } from "@/types";
+import type { Income, Expense, Asset, Debt, Project, RetirementAccount } from "@/types";
 
-// Henderson family: Jake + Sarah
-// Combined monthly income target: $13,750
-//   Jake salary:      $7,500/mo  ($90k/yr)
-//   Sarah salary:     $5,200/mo  ($62.4k/yr)
-//   Sarah consulting: $800/mo
+// Henderson family: Jake + Sarah Henderson, 2 kids (Owen 7, Lily 3), dog Biscuit
+//
+// Income breakdown (~$12,500/mo):
+//   Jake salary:      $6,500/mo  ($78k/yr net)
+//   Sarah salary:     $4,500/mo  ($54k/yr net, RN)
+//   Sarah consulting: $800/mo    (per-diem shifts)
 //   Dividends:        $250/mo
-//   Jake bonus:       $8,000/yr  (~$667/mo)
-// Total monthly: $14,417 (incl. bonus amortized)
+//   Jake bonus:       $6,000/yr  ($500/mo amortized)
+//   ─────────────────────────────────────────────
+//   Total monthly:    $12,550
 
 export const mockIncomes: Income[] = [
   {
     id: "inc-1",
     name: "Jake Salary — Senior Product Manager",
-    amount: 7_500,
+    amount: 6_500,
     frequency: "monthly",
     category: "salary",
     owner: "Jake",
     isActive: true,
     startDate: "2020-04-01",
-    notes: "Net after 401(k) pre-tax deduction",
+    notes: "Net after 401(k) pre-tax deduction and federal/state taxes",
   },
   {
     id: "inc-2",
     name: "Sarah Salary — Registered Nurse",
-    amount: 5_200,
+    amount: 4_500,
     frequency: "monthly",
     category: "salary",
     owner: "Sarah",
@@ -54,36 +56,35 @@ export const mockIncomes: Income[] = [
   {
     id: "inc-5",
     name: "Jake Annual Performance Bonus",
-    amount: 8_000,
+    amount: 6_000,
     frequency: "annually",
     category: "salary",
     owner: "Jake",
     isActive: true,
-    notes: "Paid in March; ~10% of base",
+    notes: "Paid in March; ~8% of base",
   },
 ];
 
-// Monthly expense target: ~$12,500
-// Housing $3,600 | Food $1,400 | Transport $1,050
-// Kids $900 | Health $720 | Insurance $540
-// Entertainment $380 | Personal $310 | Pets $200
-// Savings/Retirement $1,900 | Utilities $380 | Other $320 = $11,700 fixed
-// Remainder is variable flex
+// Expense breakdown (~$7,200/mo):
+// Note: mortgage, car payment, and student loan are tracked as Debts, not here.
+// Savings contributions (401k, Roth IRA, emergency fund) are handled separately.
+//
+//   Housing ops:  $1,010  (HOA, property tax, maintenance)
+//   Utilities:      $460  (electric, gas, water, internet, phone)
+//   Food:         $1,520  (groceries + dining)
+//   Transport:      $500  (gas, insurance, registration)
+//   Kids:         $1,810  (daycare, activities, supplies)
+//   Healthcare:     $825  (premiums, copays, vet)
+//   Insurance:      $230  (home, life, umbrella)
+//   Entertainment:  $395  (streaming, outings, gym)
+//   Personal:       $450  (clothing, personal care, misc)
+//   ─────────────────────────────────────────────────
+//   Total:        ~$7,200
 
 export const mockExpenses: Expense[] = [
-  // ── Housing ────────────────────────────────────────────────
+  // ── Housing (operations only — mortgage is in Debts) ───────────────────────
   {
     id: "exp-1",
-    name: "Mortgage Payment",
-    amount: 2_650,
-    frequency: "monthly",
-    category: "housing",
-    isFixed: true,
-    isEssential: true,
-    notes: "30yr fixed @ 7.125% — 218 Birchwood Ln",
-  },
-  {
-    id: "exp-2",
     name: "HOA Fees",
     amount: 210,
     frequency: "monthly",
@@ -92,18 +93,19 @@ export const mockExpenses: Expense[] = [
     isEssential: true,
   },
   {
-    id: "exp-3",
+    id: "exp-2",
     name: "Property Taxes",
-    amount: 5_400,
+    amount: 5_850,
     frequency: "annually",
     category: "housing",
     isFixed: true,
     isEssential: true,
+    notes: "Escrowed; shown here for budgeting visibility",
   },
   {
-    id: "exp-4",
+    id: "exp-3",
     name: "Home Maintenance",
-    amount: 290,
+    amount: 320,
     frequency: "monthly",
     category: "housing",
     isFixed: false,
@@ -111,11 +113,20 @@ export const mockExpenses: Expense[] = [
     notes: "1% rule annualized + misc repairs",
   },
 
-  // ── Utilities ──────────────────────────────────────────────
+  // ── Utilities ──────────────────────────────────────────────────────────────
+  {
+    id: "exp-4",
+    name: "Electricity",
+    amount: 148,
+    frequency: "monthly",
+    category: "utilities",
+    isFixed: false,
+    isEssential: true,
+  },
   {
     id: "exp-5",
-    name: "Electricity",
-    amount: 145,
+    name: "Natural Gas",
+    amount: 72,
     frequency: "monthly",
     category: "utilities",
     isFixed: false,
@@ -123,8 +134,8 @@ export const mockExpenses: Expense[] = [
   },
   {
     id: "exp-6",
-    name: "Natural Gas",
-    amount: 68,
+    name: "Water & Sewer",
+    amount: 60,
     frequency: "monthly",
     category: "utilities",
     isFixed: false,
@@ -132,85 +143,67 @@ export const mockExpenses: Expense[] = [
   },
   {
     id: "exp-7",
-    name: "Water & Sewer",
-    amount: 58,
-    frequency: "monthly",
-    category: "utilities",
-    isFixed: false,
-    isEssential: true,
-  },
-  {
-    id: "exp-8",
-    name: "Internet — Xfinity",
-    amount: 79,
+    name: "Internet — Xfinity Gigabit",
+    amount: 80,
     frequency: "monthly",
     category: "utilities",
     isFixed: true,
     isEssential: true,
   },
   {
-    id: "exp-9",
-    name: "Phone Plans (2 lines)",
-    amount: 110,
+    id: "exp-8",
+    name: "Cell Phones (2 lines) — T-Mobile",
+    amount: 100,
     frequency: "monthly",
     category: "utilities",
     isFixed: true,
     isEssential: true,
   },
 
-  // ── Food ───────────────────────────────────────────────────
+  // ── Food ───────────────────────────────────────────────────────────────────
   {
-    id: "exp-10",
+    id: "exp-9",
     name: "Groceries",
-    amount: 980,
+    amount: 1_100,
     frequency: "monthly",
     category: "food",
     isFixed: false,
     isEssential: true,
-    notes: "Family of 4 + meal prep",
+    notes: "Family of 4 + meal prep; Costco + Kroger",
   },
   {
-    id: "exp-11",
-    name: "Dining Out",
+    id: "exp-10",
+    name: "Dining Out & Takeout",
     amount: 420,
     frequency: "monthly",
     category: "food",
     isFixed: false,
     isEssential: false,
+    notes: "Date nights + family weekends",
   },
 
-  // ── Transport ──────────────────────────────────────────────
+  // ── Transport (gas + insurance — car payments are in Debts) ───────────────
   {
-    id: "exp-12",
-    name: "Jake Car Payment — Honda Accord",
-    amount: 485,
-    frequency: "monthly",
-    category: "transport",
-    isFixed: true,
-    isEssential: true,
-    notes: "2023 Honda Accord Sport — 60mo @ 6.4%",
-  },
-  {
-    id: "exp-13",
-    name: "Gas & Fuel",
-    amount: 220,
+    id: "exp-11",
+    name: "Gas & Fuel (2 vehicles)",
+    amount: 230,
     frequency: "monthly",
     category: "transport",
     isFixed: false,
     isEssential: true,
   },
   {
-    id: "exp-14",
-    name: "Auto Insurance (2 vehicles)",
+    id: "exp-12",
+    name: "Auto Insurance (2 vehicles) — Progressive",
     amount: 2_760,
     frequency: "annually",
     category: "insurance",
     isFixed: true,
     isEssential: true,
-    notes: "6-mo policy; Progressive",
+    notes: "6-month policy; full coverage on both",
   },
   {
-    id: "exp-15",
+    id: "exp-13",
     name: "Vehicle Registration & Fees",
     amount: 480,
     frequency: "annually",
@@ -219,60 +212,50 @@ export const mockExpenses: Expense[] = [
     isEssential: true,
   },
 
-  // ── Kids ───────────────────────────────────────────────────
+  // ── Kids ───────────────────────────────────────────────────────────────────
   {
-    id: "exp-16",
+    id: "exp-14",
     name: "Daycare — Lily (age 3)",
     amount: 1_380,
     frequency: "monthly",
     category: "education",
     isFixed: true,
     isEssential: true,
-    notes: "Full-time daycare center",
+    notes: "Full-time daycare center; ends 2027",
   },
   {
-    id: "exp-17",
-    name: "After-school / Activities — Owen (age 7)",
+    id: "exp-15",
+    name: "After-school & Activities — Owen (age 7)",
     amount: 310,
     frequency: "monthly",
     category: "education",
     isFixed: false,
     isEssential: true,
-    notes: "Soccer + piano lessons",
+    notes: "Soccer league + piano lessons",
   },
   {
-    id: "exp-18",
-    name: "School Supplies & Clothing — Kids",
+    id: "exp-16",
+    name: "School Supplies & Kids Clothing",
     amount: 120,
     frequency: "monthly",
     category: "education",
     isFixed: false,
     isEssential: true,
   },
-  {
-    id: "exp-19",
-    name: "529 Contributions — Owen & Lily",
-    amount: 300,
-    frequency: "monthly",
-    category: "savings",
-    isFixed: true,
-    isEssential: true,
-    notes: "$150 each child",
-  },
 
-  // ── Health ─────────────────────────────────────────────────
+  // ── Healthcare ─────────────────────────────────────────────────────────────
   {
-    id: "exp-20",
-    name: "Health Insurance Premium (family)",
+    id: "exp-17",
+    name: "Health Insurance Premium (family) — BCBS",
     amount: 510,
     frequency: "monthly",
     category: "healthcare",
     isFixed: true,
     isEssential: true,
-    notes: "Jake employer plan — BCBS family PPO",
+    notes: "Jake employer-sponsored PPO plan",
   },
   {
-    id: "exp-21",
+    id: "exp-18",
     name: "Dental & Vision Insurance",
     amount: 72,
     frequency: "monthly",
@@ -281,7 +264,7 @@ export const mockExpenses: Expense[] = [
     isEssential: true,
   },
   {
-    id: "exp-22",
+    id: "exp-19",
     name: "Medical Copays & Prescriptions",
     amount: 138,
     frequency: "monthly",
@@ -289,10 +272,20 @@ export const mockExpenses: Expense[] = [
     isFixed: false,
     isEssential: true,
   },
-
-  // ── Insurance ──────────────────────────────────────────────
   {
-    id: "exp-23",
+    id: "exp-20",
+    name: "Vet & Pet Insurance — Biscuit",
+    amount: 105,
+    frequency: "monthly",
+    category: "healthcare",
+    isFixed: false,
+    isEssential: true,
+    notes: "Golden Retriever; wellness plan + emergency coverage",
+  },
+
+  // ── Insurance ──────────────────────────────────────────────────────────────
+  {
+    id: "exp-21",
     name: "Homeowner's Insurance",
     amount: 1_680,
     frequency: "annually",
@@ -301,269 +294,194 @@ export const mockExpenses: Expense[] = [
     isEssential: true,
   },
   {
-    id: "exp-24",
-    name: "Term Life Insurance (Jake)",
+    id: "exp-22",
+    name: "Term Life Insurance — Jake ($750k)",
     amount: 480,
     frequency: "annually",
     category: "insurance",
     isFixed: true,
     isEssential: true,
-    notes: "20yr $750k policy — Haven Life",
+    notes: "20yr policy — Haven Life",
   },
   {
-    id: "exp-25",
-    name: "Term Life Insurance (Sarah)",
+    id: "exp-23",
+    name: "Term Life Insurance — Sarah ($500k)",
     amount: 360,
     frequency: "annually",
     category: "insurance",
     isFixed: true,
     isEssential: true,
-    notes: "20yr $500k policy",
+    notes: "20yr policy",
   },
   {
-    id: "exp-26",
-    name: "Umbrella Policy",
+    id: "exp-24",
+    name: "Umbrella Liability Policy",
     amount: 240,
     frequency: "annually",
     category: "insurance",
     isFixed: true,
     isEssential: true,
-    notes: "$1M liability umbrella",
+    notes: "$1M coverage",
   },
 
-  // ── Retirement / Savings ───────────────────────────────────
+  // ── Entertainment ──────────────────────────────────────────────────────────
   {
-    id: "exp-27",
-    name: "Jake 401(k) Contribution",
-    amount: 750,
-    frequency: "monthly",
-    category: "savings",
-    isFixed: true,
-    isEssential: true,
-    notes: "Pre-tax; employer matches 4%",
-  },
-  {
-    id: "exp-28",
-    name: "Sarah Roth IRA",
-    amount: 583,
-    frequency: "monthly",
-    category: "savings",
-    isFixed: true,
-    isEssential: true,
-    notes: "$7k/yr max contribution",
-  },
-  {
-    id: "exp-29",
-    name: "Emergency Fund Savings",
-    amount: 400,
-    frequency: "monthly",
-    category: "savings",
-    isFixed: true,
-    isEssential: true,
-    notes: "HYSA — building to 6 months",
-  },
-
-  // ── Entertainment ──────────────────────────────────────────
-  {
-    id: "exp-30",
-    name: "Netflix",
-    amount: 22.99,
+    id: "exp-25",
+    name: "Streaming (Netflix + Disney+ + Spotify)",
+    amount: 54,
     frequency: "monthly",
     category: "entertainment",
     isFixed: true,
+    isEssential: false,
+  },
+  {
+    id: "exp-26",
+    name: "Family Outings & Events",
+    amount: 290,
+    frequency: "monthly",
+    category: "entertainment",
+    isFixed: false,
+    isEssential: false,
+    notes: "Movies, parks, weekend day-trips",
+  },
+  {
+    id: "exp-27",
+    name: "Gym Memberships (Jake + Sarah)",
+    amount: 51,
+    frequency: "monthly",
+    category: "entertainment",
+    isFixed: true,
+    isEssential: false,
+  },
+
+  // ── Personal & Household ───────────────────────────────────────────────────
+  {
+    id: "exp-28",
+    name: "Clothing — Adults",
+    amount: 140,
+    frequency: "monthly",
+    category: "personal",
+    isFixed: false,
+    isEssential: false,
+  },
+  {
+    id: "exp-29",
+    name: "Personal Care & Hair",
+    amount: 110,
+    frequency: "monthly",
+    category: "personal",
+    isFixed: false,
+    isEssential: false,
+  },
+  {
+    id: "exp-30",
+    name: "Amazon & Household Supplies",
+    amount: 95,
+    frequency: "monthly",
+    category: "personal",
+    isFixed: false,
     isEssential: false,
   },
   {
     id: "exp-31",
-    name: "Spotify Family",
-    amount: 16.99,
-    frequency: "monthly",
-    category: "entertainment",
-    isFixed: true,
-    isEssential: false,
-  },
-  {
-    id: "exp-32",
-    name: "Disney+",
-    amount: 13.99,
-    frequency: "monthly",
-    category: "entertainment",
-    isFixed: true,
-    isEssential: false,
-  },
-  {
-    id: "exp-33",
-    name: "Family Outings & Events",
-    amount: 250,
-    frequency: "monthly",
-    category: "entertainment",
-    isFixed: false,
-    isEssential: false,
-    notes: "Movies, parks, weekend trips",
-  },
-  {
-    id: "exp-34",
-    name: "Jake Gym — Planet Fitness",
-    amount: 25,
-    frequency: "monthly",
-    category: "entertainment",
-    isFixed: true,
-    isEssential: false,
-  },
-
-  // ── Personal ───────────────────────────────────────────────
-  {
-    id: "exp-35",
-    name: "Clothing — Adults",
-    amount: 130,
-    frequency: "monthly",
-    category: "personal",
-    isFixed: false,
-    isEssential: false,
-  },
-  {
-    id: "exp-36",
-    name: "Personal Care & Hair",
-    amount: 95,
-    frequency: "monthly",
-    category: "personal",
-    isFixed: false,
-    isEssential: false,
-  },
-  {
-    id: "exp-37",
-    name: "Jake Amazon / Misc Shopping",
-    amount: 85,
-    frequency: "monthly",
-    category: "personal",
-    isFixed: false,
-    isEssential: false,
-  },
-
-  // ── Pets ───────────────────────────────────────────────────
-  {
-    id: "exp-38",
     name: "Dog Food & Supplies — Biscuit",
-    amount: 95,
-    frequency: "monthly",
-    category: "personal",
-    isFixed: false,
-    isEssential: true,
-    notes: "Golden Retriever",
-  },
-  {
-    id: "exp-39",
-    name: "Vet & Pet Insurance — Biscuit",
     amount: 105,
     frequency: "monthly",
-    category: "healthcare",
+    category: "personal",
     isFixed: false,
     isEssential: true,
   },
-
-  // ── Debt payments ──────────────────────────────────────────
-  {
-    id: "exp-40",
-    name: "Student Loan — Sarah",
-    amount: 298,
-    frequency: "monthly",
-    category: "debt",
-    isFixed: true,
-    isEssential: true,
-    notes: "Federal — income-driven repayment",
-  },
 ];
+
+// Assets:
+//   Regular assets:   $732k  (home equity, brokerage, cash, vehicles, 529s)
+//   Retirement accts: $186k  (tracked separately in mockRetirementAccounts)
+//   Total assets:     $918k
+//   Total debts:      $432k
+//   Net worth:       ~$486k
 
 export const mockAssets: Asset[] = [
   {
     id: "ast-1",
     name: "Primary Residence — 218 Birchwood Ln",
-    value: 520_000,
+    value: 590_000,
     category: "real_estate",
     appreciationRate: 4.5,
     purchasePrice: 430_000,
     purchaseDate: "2021-08-20",
+    notes: "4BR/3BA suburban home",
   },
   {
     id: "ast-2",
-    name: "Jake 401(k) — Fidelity",
-    value: 98_400,
-    category: "retirement",
-    appreciationRate: 7.0,
+    name: "Joint Brokerage — Fidelity",
+    value: 39_500,
+    category: "investment",
+    appreciationRate: 8.0,
+    notes: "FZROX + FXNAX + dividend ETFs",
   },
   {
     id: "ast-3",
-    name: "Sarah Roth IRA — Vanguard",
-    value: 42_600,
-    category: "retirement",
-    appreciationRate: 7.0,
-  },
-  {
-    id: "ast-4",
-    name: "Joint Brokerage — Fidelity",
-    value: 31_200,
-    category: "investment",
-    appreciationRate: 8.0,
-    notes: "FZROX + dividend ETFs",
-  },
-  {
-    id: "ast-5",
     name: "High-Yield Savings — SoFi",
-    value: 19_400,
+    value: 24_500,
     category: "cash",
     notes: "Emergency fund — 4.6% APY",
   },
   {
-    id: "ast-6",
+    id: "ast-4",
     name: "Joint Checking — Chase",
-    value: 7_800,
+    value: 9_800,
     category: "cash",
   },
   {
-    id: "ast-7",
+    id: "ast-5",
     name: "2023 Honda Accord Sport",
-    value: 28_500,
+    value: 26_400,
     category: "vehicle",
     purchasePrice: 34_200,
     purchaseDate: "2023-01-15",
-    appreciationRate: -12,
+    appreciationRate: -15,
   },
   {
-    id: "ast-8",
-    name: "2020 Toyota RAV4",
-    value: 22_100,
+    id: "ast-6",
+    name: "2020 Toyota RAV4 XLE",
+    value: 18_900,
     category: "vehicle",
     purchasePrice: 31_500,
     purchaseDate: "2020-03-08",
     appreciationRate: -12,
   },
   {
-    id: "ast-9",
+    id: "ast-7",
     name: "529 Plan — Owen",
-    value: 12_800,
+    value: 15_200,
     category: "investment",
     appreciationRate: 6.5,
+    notes: "Age-based index portfolio",
   },
   {
-    id: "ast-10",
+    id: "ast-8",
     name: "529 Plan — Lily",
-    value: 5_400,
+    value: 7_400,
     category: "investment",
     appreciationRate: 6.5,
+    notes: "Age-based index portfolio",
   },
 ];
+
+// Debt minimum payments: $2,650 + $485 + $295 + $35 = $3,465/mo (~$3,800 target)
+// Mortgage is the dominant driver; will be ~$3,500 total with a small extra payment.
 
 export const mockDebts: Debt[] = [
   {
     id: "dbt-1",
     name: "Mortgage — 218 Birchwood Ln",
-    balance: 388_200,
+    balance: 384_500,
     originalBalance: 430_000,
     interestRate: 7.125,
-    minimumPayment: 2_650,
+    minimumPayment: 2_890,
     category: "mortgage",
     lender: "US Bank",
-    notes: "30yr fixed, originated Aug 2021",
+    notes: "30yr fixed, originated Aug 2021; includes PITI",
   },
   {
     id: "dbt-2",
@@ -578,10 +496,10 @@ export const mockDebts: Debt[] = [
   {
     id: "dbt-3",
     name: "Student Loan — Sarah (Federal)",
-    balance: 19_800,
+    balance: 18_900,
     originalBalance: 32_000,
     interestRate: 4.99,
-    minimumPayment: 298,
+    minimumPayment: 295,
     category: "student",
     lender: "MOHELA",
     notes: "Income-driven repayment plan",
@@ -589,13 +507,37 @@ export const mockDebts: Debt[] = [
   {
     id: "dbt-4",
     name: "Chase Sapphire Preferred",
-    balance: 1_640,
-    originalBalance: 1_640,
+    balance: 1_420,
+    originalBalance: 1_420,
     interestRate: 22.99,
     minimumPayment: 35,
     category: "credit_card",
     lender: "Chase",
-    notes: "Paid in full each month — current balance",
+    notes: "Paid in full monthly — current balance",
+  },
+];
+
+export const mockRetirementAccounts: RetirementAccount[] = [
+  {
+    id: "ret-1",
+    name: "Jake 401(k) — Fidelity",
+    type: "401k",
+    owner: "Jake",
+    balance: 131_500,
+    contributionYtd: 4_500,
+    employerMatchPct: 4,
+    annualContributionLimit: 23_000,
+    notes: "Invested in target-date 2055 fund",
+  },
+  {
+    id: "ret-2",
+    name: "Sarah Roth IRA — Vanguard",
+    type: "roth_ira",
+    owner: "Sarah",
+    balance: 54_800,
+    contributionYtd: 3_500,
+    annualContributionLimit: 7_000,
+    notes: "VTSAX + VTIAX (80/20)",
   },
 ];
 
@@ -640,11 +582,11 @@ export const mockProjects: Project[] = [
     name: "Emergency Fund — 6-Month Goal",
     description: "Build HYSA to $25,000 (6 months of core expenses)",
     totalBudget: 25_000,
-    amountSpent: 19_400,
+    amountSpent: 24_500,
     category: "emergency_fund",
     status: "in_progress",
     expenses: [],
-    notes: "Currently at $19,400 — $5,600 remaining at $400/mo",
+    notes: "Almost there — $500 remaining at $400/mo",
   },
   {
     id: "proj-4",
@@ -656,6 +598,6 @@ export const mockProjects: Project[] = [
     status: "planned",
     targetDate: "2027-05-01",
     expenses: [],
-    notes: "3 quotes received: $12,800 – $15,400",
+    notes: "3 quotes received: $12,800–$15,400",
   },
 ];

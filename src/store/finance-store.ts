@@ -8,6 +8,9 @@ import {
   type IncomeRow, type ExpenseRow, type AssetRow, type DebtRow, type ProjectRow,
   type RetirementAccountRow,
 } from "@/lib/supabase/mappers";
+import {
+  mockIncomes, mockExpenses, mockAssets, mockDebts, mockProjects, mockRetirementAccounts,
+} from "@/lib/mock-data";
 
 function uid(): string {
   if (typeof crypto !== "undefined" && crypto.randomUUID) return crypto.randomUUID();
@@ -154,12 +157,12 @@ interface FinanceStore {
 export const useFinanceStore = create<FinanceStore>()(
   persist(
     (set, get) => ({
-  incomes: [],
-  expenses: [],
-  assets: [],
-  debts: [],
-  projects: [],
-  retirementAccounts: [],
+  incomes: mockIncomes,
+  expenses: mockExpenses,
+  assets: mockAssets,
+  debts: mockDebts,
+  projects: mockProjects,
+  retirementAccounts: mockRetirementAccounts,
 
   householdId: null,
   householdName: null,
@@ -261,12 +264,12 @@ export const useFinanceStore = create<FinanceStore>()(
       householdName: null,
       isLoadedFromSupabase: false,
       isAuthenticatedUser: false,
-      incomes: [],
-      expenses: [],
-      assets: [],
-      debts: [],
-      projects: [],
-      retirementAccounts: [],
+      incomes: mockIncomes,
+      expenses: mockExpenses,
+      assets: mockAssets,
+      debts: mockDebts,
+      projects: mockProjects,
+      retirementAccounts: mockRetirementAccounts,
     });
   },
 
@@ -496,7 +499,7 @@ export const useFinanceStore = create<FinanceStore>()(
         return localStorage;
       }),
       skipHydration: true,
-      version: 1,
+      version: 2,
       migrate: (persistedState: unknown, version: number) => {
         const s = persistedState as Record<string, unknown>;
         function backfill(arr: unknown[]): unknown[] {
@@ -514,6 +517,24 @@ export const useFinanceStore = create<FinanceStore>()(
             debts: backfill((s.debts as unknown[] | undefined) ?? []),
             retirementAccounts: backfill((s.retirementAccounts as unknown[] | undefined) ?? []),
           };
+        }
+        // v1→v2: If this is a demo user (no householdId) with no data, restore mock data
+        if (version < 2 && !s.householdId) {
+          const hasData =
+            ((s.incomes as unknown[])?.length ?? 0) > 0 ||
+            ((s.expenses as unknown[])?.length ?? 0) > 0 ||
+            ((s.assets as unknown[])?.length ?? 0) > 0;
+          if (!hasData) {
+            return {
+              ...s,
+              incomes: mockIncomes,
+              expenses: mockExpenses,
+              assets: mockAssets,
+              debts: mockDebts,
+              projects: mockProjects,
+              retirementAccounts: mockRetirementAccounts,
+            };
+          }
         }
         return s;
       },
