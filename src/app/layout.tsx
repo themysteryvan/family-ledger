@@ -9,7 +9,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Family Ledger",
+  title: "Standing Ledger",
   description: "Household finance dashboard for the Henderson family",
 };
 

@@ -53,7 +53,7 @@ function buildSheet(wb: ExcelJS.Workbook, def: SheetDef) {
 
 export async function GET() {
   const wb = new ExcelJS.Workbook();
-  wb.creator = "Family Ledger";
+  wb.creator = "Standing Ledger";
   wb.created = new Date();
 
   buildSheet(wb, {

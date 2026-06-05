@@ -79,7 +79,7 @@ export function Sidebar() {
           <Wallet size={15} style={{ color: "var(--accent-blue)" }} />
         </span>
         <span className="font-semibold text-sm tracking-tight" style={{ color: "var(--text-primary)" }}>
-          Family Ledger
+          Standing Ledger
         </span>
       </div>
 

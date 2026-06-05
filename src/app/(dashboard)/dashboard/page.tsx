@@ -94,7 +94,7 @@ export default function DashboardPage() {
 
       {isEmpty && (
         <div className="rounded-xl border p-8" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
-          <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Welcome to Family Ledger</h2>
+          <h2 className="text-lg font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Welcome to Standing Ledger</h2>
           <p className="text-sm mb-6" style={{ color: "var(--text-muted)" }}>
             Add your financial data to get a complete picture of your household finances.
           </p>

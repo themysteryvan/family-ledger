@@ -374,7 +374,7 @@ export default function ImportPage() {
             {[
               { label: "CSV", desc: "Chase, BoA, Citi…" },
               { label: "PDF", desc: "Bank statements" },
-              { label: "XLSX", desc: "Family Ledger template" },
+              { label: "XLSX", desc: "Standing Ledger template" },
             ].map(({ label, desc }) => (
               <div key={label} className="flex items-center gap-2 px-3 py-1.5 rounded-lg" style={{ background: "var(--bg-elevated)" }}>
                 <FileText size={13} style={{ color: "var(--accent-blue)" }} />

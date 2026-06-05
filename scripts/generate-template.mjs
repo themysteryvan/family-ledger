@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(__dirname, "../public/family-ledger-template.xlsx");
 
 const wb = new ExcelJS.Workbook();
-wb.creator = "Family Ledger";
+wb.creator = "Standing Ledger";
 wb.created = new Date();
 
 // ── Shared styles ─────────────────────────────────────────────────────────────

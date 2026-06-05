@@ -67,7 +67,7 @@ export default function LoginPage() {
           <Wallet size={18} style={{ color: "var(--accent-blue)" }} />
         </span>
         <span className="text-xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
-          Family Ledger
+          Standing Ledger
         </span>
       </div>
 
