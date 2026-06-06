@@ -10,7 +10,7 @@ export interface IncomeRow {
 export interface ExpenseRow {
   id: string; household_id: string; name: string; amount: number;
   frequency: string; category: string; fixed: boolean;
-  essential: boolean; data_source: string | null; notes: string | null;
+  essential: boolean; owner: string | null; data_source: string | null; notes: string | null;
 }
 export interface AssetRow {
   id: string; household_id: string; name: string; type: string;
@@ -20,7 +20,7 @@ export interface AssetRow {
 export interface DebtRow {
   id: string; household_id: string; name: string; type: string;
   original_balance: number; current_balance: number; interest_rate: number;
-  minimum_payment: number; data_source: string | null; notes: string | null;
+  minimum_payment: number; owner: string | null; data_source: string | null; notes: string | null;
 }
 export interface RetirementAccountRow {
   id: string; household_id: string; name: string; type: string;
@@ -56,6 +56,7 @@ export const toExpense = (r: ExpenseRow): Expense => ({
   frequency: r.frequency as Expense["frequency"],
   category: r.category as Expense["category"],
   isFixed: r.fixed, isEssential: r.essential,
+  owner: r.owner ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
 });
@@ -75,6 +76,7 @@ export const toDebt = (r: DebtRow): Debt => ({
   interestRate: r.interest_rate,
   minimumPayment: r.minimum_payment,
   category: r.type as Debt["category"],
+  owner: r.owner ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
 });
@@ -124,6 +126,7 @@ export const fromExpense = (item: Omit<Expense, "id">, householdId: string) => (
   household_id: householdId, name: item.name, amount: item.amount,
   frequency: item.frequency, category: item.category,
   fixed: item.isFixed, essential: item.isEssential,
+  owner: item.owner ?? null,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });
@@ -153,6 +156,7 @@ export const fromDebt = (item: Omit<Debt, "id">, householdId: string) => ({
   interest_rate: item.interestRate,
   monthly_payment: item.minimumPayment ?? 0,
   minimum_payment: item.minimumPayment ?? 0,
+  owner: item.owner ?? null,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
 });

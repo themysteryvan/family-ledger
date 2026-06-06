@@ -126,14 +126,14 @@ export default function ExpensesPage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              {["Expense", "Category", "Amount", "Frequency", "Monthly", "Type", "Data Source", ""].map((h) => (
+              {["Expense", "Owner", "Category", "Amount", "Frequency", "Monthly", "Type", "Data Source", ""].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {expenses.length === 0 && (
-              <tr><td colSpan={8}>
+              <tr><td colSpan={9}>
                 <EmptyState icon={Receipt} title="No expenses yet" description="Add your first expense to start tracking your household spending." action="Add Expense" onAction={openAdd} />
               </td></tr>
             )}
@@ -142,6 +142,7 @@ export default function ExpensesPage() {
               return (
                 <tr key={exp.id} style={{ borderBottom: i < expenses.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
                   <td className="px-5 py-3 font-medium" style={{ color: "var(--text-primary)" }}>{exp.name}</td>
+                  <td className="px-5 py-3" style={{ color: "var(--text-secondary)" }}>{exp.owner || "—"}</td>
                   <td className="px-5 py-3">
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium capitalize" style={{ background: "var(--bg-elevated)", color: categoryColors[exp.category] || "var(--text-muted)" }}>
                       {exp.category}

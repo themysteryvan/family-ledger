@@ -46,6 +46,7 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
     category: string;
     isFixed: boolean;
     isEssential: boolean;
+    owner: string;
     notes: string;
   }>({
     name: initial?.name ?? "",
@@ -54,6 +55,7 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
     category: initial?.category ?? "housing",
     isFixed: initial?.isFixed ?? true,
     isEssential: initial?.isEssential ?? true,
+    owner: initial?.owner ?? "",
     notes: initial?.notes ?? "",
   });
 
@@ -69,6 +71,7 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
       category: (f.category.trim() || "other") as Expense["category"],
       isFixed: f.isFixed,
       isEssential: f.isEssential,
+      owner: f.owner.trim() || undefined,
       notes: f.notes.trim() || undefined,
     };
     onSave(initial ? { ...data, id: initial.id } : data);
@@ -123,6 +126,14 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
         <Checkbox label="Fixed amount" checked={f.isFixed} onChange={(v) => set("isFixed", v)} />
         <Checkbox label="Essential" checked={f.isEssential} onChange={(v) => set("isEssential", v)} />
       </div>
+
+      <Field label="Owner (optional)">
+        <Input
+          value={f.owner}
+          onChange={(e) => set("owner", e.target.value)}
+          placeholder="e.g. Jake, Sarah, Joint"
+        />
+      </Field>
 
       <Field label="Notes (optional)">
         <Textarea

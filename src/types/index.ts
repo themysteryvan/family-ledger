@@ -42,6 +42,7 @@ export interface Expense {
     | "other";
   isFixed: boolean;
   isEssential: boolean;
+  owner?: string;
   dataSource?: string;
   notes?: string;
 }
@@ -81,6 +82,7 @@ export interface Debt {
     | "personal"
     | "medical"
     | "other";
+  owner?: string;
   lender?: string;
   dueDate?: string;
   dataSource?: string;

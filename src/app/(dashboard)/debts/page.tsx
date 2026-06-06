@@ -100,6 +100,7 @@ export default function DebtsPage() {
               <div className="flex items-start justify-between mb-3">
                 <div>
                   <p className="font-semibold" style={{ color: "var(--text-primary)" }}>{debt.name}</p>
+                  {debt.owner && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{debt.owner}</p>}
                   {debt.lender && <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{debt.lender}</p>}
                   <span className="inline-block mt-1 px-2 py-0.5 rounded-full text-xs" style={{ background: "var(--bg-elevated)", color: "var(--text-muted)" }}>
                     {debt.dataSource || "Manual Entry"}

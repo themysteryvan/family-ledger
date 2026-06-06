@@ -28,6 +28,7 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
     interestRate: initial?.interestRate != null ? String(initial.interestRate) : "",
     minimumPayment: initial?.minimumPayment != null ? String(initial.minimumPayment) : "",
     category: initial?.category ?? "credit_card" as Debt["category"],
+    owner: initial?.owner ?? "",
     lender: initial?.lender ?? "",
     notes: initial?.notes ?? "",
   });
@@ -44,6 +45,7 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
       interestRate: parseFloat(f.interestRate) || 0,
       minimumPayment: parseFloat(f.minimumPayment) || 0,
       category: f.category,
+      owner: f.owner.trim() || undefined,
       lender: f.lender.trim() || undefined,
       notes: f.notes.trim() || undefined,
     };
@@ -131,6 +133,14 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
           />
         </Field>
       </div>
+
+      <Field label="Owner (optional)">
+        <Input
+          value={f.owner}
+          onChange={(e) => set("owner", e.target.value)}
+          placeholder="e.g. Jake, Sarah, Joint"
+        />
+      </Field>
 
       <Field label="Notes (optional)">
         <Textarea
