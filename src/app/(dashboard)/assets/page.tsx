@@ -51,6 +51,10 @@ export default function AssetsPage() {
   const [editItem, setEditItem] = useState<Asset | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
+  console.log("[assets] ownerFilter:", ownerFilter);
+  console.log("[assets] asset owners:", allAssets.map((a) => ({ name: a.name, owner: a.owner })));
+  console.log("[assets] filtered count:", assets.length);
+
   const total = totalAssets(assets);
   const realEstate = assets.filter((a) => a.category === "real_estate").reduce((s, a) => s + a.value, 0);
   const retirement = assets.filter((a) => a.category === "retirement").reduce((s, a) => s + a.value, 0);
@@ -109,23 +113,45 @@ export default function AssetsPage() {
       </div>
 
       {assets.length > 0 && <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
-          <CardTitle>Asset Allocation</CardTitle>
-          <ResponsiveContainer width="100%" height={260}>
-            <PieChart>
-              <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
-                {pieData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12 }}
-                formatter={(v) => [fmt(Number(v)), ""]}
-              />
-              <Legend formatter={(value) => <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>{value}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
+        {ownerFilter === null ? (
+          <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+            <CardTitle>Asset Allocation</CardTitle>
+            <ResponsiveContainer width="100%" height={260}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={2} dataKey="value">
+                  {pieData.map((entry, i) => (
+                    <Cell key={i} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12 }}
+                  formatter={(v) => [fmt(Number(v)), ""]}
+                />
+                <Legend formatter={(value) => <span style={{ color: "var(--text-secondary)", fontSize: 12 }}>{value}</span>} />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+            <CardTitle>Assets</CardTitle>
+            <div className="mt-3 space-y-2">
+              {[...assets].sort((a, b) => b.value - a.value).map((a) => (
+                <div key={a.id} className="flex items-center justify-between py-2 border-b last:border-0" style={{ borderColor: "var(--border-subtle)" }}>
+                  <div>
+                    <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{a.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: "var(--bg-elevated)", color: categoryColors[a.category] || "var(--text-muted)" }}>
+                        {categoryLabels[a.category]}
+                      </span>
+                      {a.owner && <span className="text-xs" style={{ color: "var(--text-muted)" }}>{a.owner}</span>}
+                    </div>
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: "var(--accent-green)" }}>{fmt(a.value)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <CardTitle>By Category</CardTitle>
@@ -138,7 +164,9 @@ export default function AssetsPage() {
                     <span style={{ color: "var(--text-secondary)" }}>{d.name}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span style={{ color: "var(--text-muted)", fontSize: 11 }}>{total > 0 ? ((d.value / total) * 100).toFixed(0) : 0}%</span>
+                    {ownerFilter === null && (
+                      <span style={{ color: "var(--text-muted)", fontSize: 11 }}>{total > 0 ? ((d.value / total) * 100).toFixed(0) : 0}%</span>
+                    )}
                     <span className="font-semibold" style={{ color: "var(--text-primary)" }}>{fmt(d.value)}</span>
                   </div>
                 </div>
