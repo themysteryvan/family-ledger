@@ -15,7 +15,8 @@ import {
 } from "recharts";
 import { StatCard } from "@/components/ui/stat-card";
 import { CardTitle } from "@/components/ui/card";
-import { buildFinancialSummary, buildNetWorthHistory, totalAssets, totalDebt, fmt } from "@/lib/finance";
+import { FilterBar } from "@/components/ui/filter-bar";
+import { buildFinancialSummary, buildNetWorthHistory, filterByOwner, totalAssets, totalDebt, fmt } from "@/lib/finance";
 import { useFinanceStore } from "@/store/finance-store";
 import { useState, useEffect } from "react";
 
@@ -23,11 +24,17 @@ export default function NetWorthPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const incomes = useFinanceStore((s) => s.incomes);
-  const expenses = useFinanceStore((s) => s.expenses);
-  const assets = useFinanceStore((s) => s.assets);
-  const debts = useFinanceStore((s) => s.debts);
+  const allIncomes = useFinanceStore((s) => s.incomes);
+  const allExpenses = useFinanceStore((s) => s.expenses);
+  const allAssets = useFinanceStore((s) => s.assets);
+  const allDebts = useFinanceStore((s) => s.debts);
   const retirementAccounts = useFinanceStore((s) => s.retirementAccounts);
+  const ownerFilter = useFinanceStore((s) => s.ownerFilter);
+
+  const incomes = filterByOwner(allIncomes, ownerFilter);
+  const expenses = filterByOwner(allExpenses, ownerFilter);
+  const assets = filterByOwner(allAssets, ownerFilter);
+  const debts = filterByOwner(allDebts, ownerFilter);
 
   const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
@@ -41,13 +48,16 @@ export default function NetWorthPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
-          Net Worth
-        </h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-          Assets minus liabilities over time
-        </p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+            Net Worth
+          </h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
+            Assets minus liabilities over time
+          </p>
+        </div>
+        <FilterBar />
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

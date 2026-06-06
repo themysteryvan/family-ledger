@@ -26,9 +26,11 @@ import {
 } from "recharts";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardTitle } from "@/components/ui/card";
+import { FilterBar } from "@/components/ui/filter-bar";
 import {
   buildFinancialSummary,
   buildNetWorthHistory,
+  filterByOwner,
   toMonthly,
   fmt,
   fmtPct,
@@ -57,9 +59,14 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const { incomes, expenses, assets, debts, retirementAccounts, householdName, isAuthenticatedUser, isLoadedFromSupabase } = useFinanceStore();
+  const { incomes: allIncomes, expenses: allExpenses, assets: allAssets, debts: allDebts, retirementAccounts, householdName, isAuthenticatedUser, isLoadedFromSupabase, ownerFilter } = useFinanceStore();
   const isEmpty = isAuthenticatedUser && isLoadedFromSupabase &&
-    incomes.length === 0 && expenses.length === 0 && assets.length === 0 && debts.length === 0;
+    allIncomes.length === 0 && allExpenses.length === 0 && allAssets.length === 0 && allDebts.length === 0;
+
+  const incomes = filterByOwner(allIncomes, ownerFilter);
+  const expenses = filterByOwner(allExpenses, ownerFilter);
+  const assets = filterByOwner(allAssets, ownerFilter);
+  const debts = filterByOwner(allDebts, ownerFilter);
 
   const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
@@ -87,9 +94,12 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Dashboard</h1>
-        <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Dashboard</h1>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>{subtitle}</p>
+        </div>
+        <FilterBar />
       </div>
 
       {isEmpty && (

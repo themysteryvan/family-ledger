@@ -15,8 +15,9 @@ import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { AssetForm } from "@/components/forms/asset-form";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { useFinanceStore } from "@/store/finance-store";
-import { totalAssets, fmt } from "@/lib/finance";
+import { totalAssets, filterByOwner, fmt } from "@/lib/finance";
 import type { Asset } from "@/types";
 
 const categoryColors: Record<string, string> = {
@@ -40,7 +41,9 @@ const categoryLabels: Record<string, string> = {
 };
 
 export default function AssetsPage() {
-  const assets = useFinanceStore((s) => s.assets);
+  const allAssets = useFinanceStore((s) => s.assets);
+  const ownerFilter = useFinanceStore((s) => s.ownerFilter);
+  const assets = filterByOwner(allAssets, ownerFilter);
   const addAsset = useFinanceStore((s) => s.addAsset);
   const updateAsset = useFinanceStore((s) => s.updateAsset);
   const deleteAsset = useFinanceStore((s) => s.deleteAsset);
@@ -85,14 +88,17 @@ export default function AssetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Assets</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>All household assets and their current value</p>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
-          <Plus size={15} /> Add Asset
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <FilterBar />
+          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
+            <Plus size={15} /> Add Asset
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

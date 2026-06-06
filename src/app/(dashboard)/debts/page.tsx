@@ -10,8 +10,9 @@ import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { DebtForm } from "@/components/forms/debt-form";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { useFinanceStore } from "@/store/finance-store";
-import { totalDebt, fmt, fmtPct } from "@/lib/finance";
+import { totalDebt, filterByOwner, fmt, fmtPct } from "@/lib/finance";
 import type { Debt } from "@/types";
 
 const categoryColors: Record<string, string> = {
@@ -90,7 +91,9 @@ function monthToYear(months: number): number {
 }
 
 export default function DebtsPage() {
-  const debts = useFinanceStore((s) => s.debts);
+  const allDebts = useFinanceStore((s) => s.debts);
+  const ownerFilter = useFinanceStore((s) => s.ownerFilter);
+  const debts = filterByOwner(allDebts, ownerFilter);
   const addDebt = useFinanceStore((s) => s.addDebt);
   const updateDebt = useFinanceStore((s) => s.updateDebt);
   const deleteDebt = useFinanceStore((s) => s.deleteDebt);
@@ -164,14 +167,17 @@ export default function DebtsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Debts</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Liabilities and debt payoff tracking</p>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
-          <Plus size={15} /> Add Debt
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <FilterBar />
+          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
+            <Plus size={15} /> Add Debt
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

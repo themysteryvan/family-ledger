@@ -7,8 +7,9 @@ import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { RetirementForm } from "@/components/forms/retirement-form";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { useFinanceStore } from "@/store/finance-store";
-import { fmt } from "@/lib/finance";
+import { filterByOwner, fmt } from "@/lib/finance";
 import type { RetirementAccount } from "@/types";
 
 const typeLabels: Record<string, string> = {
@@ -32,7 +33,9 @@ const typeColors: Record<string, string> = {
 };
 
 export default function RetirementPage() {
-  const accounts = useFinanceStore((s) => s.retirementAccounts);
+  const allAccounts = useFinanceStore((s) => s.retirementAccounts);
+  const ownerFilter = useFinanceStore((s) => s.ownerFilter);
+  const accounts = filterByOwner(allAccounts, ownerFilter);
   const addRetirementAccount = useFinanceStore((s) => s.addRetirementAccount);
   const updateRetirementAccount = useFinanceStore((s) => s.updateRetirementAccount);
   const deleteRetirementAccount = useFinanceStore((s) => s.deleteRetirementAccount);
@@ -66,14 +69,17 @@ export default function RetirementPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Retirement</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>401(k), IRA, and other retirement accounts</p>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
-          <Plus size={15} /> Add Account
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <FilterBar />
+          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
+            <Plus size={15} /> Add Account
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

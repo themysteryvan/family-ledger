@@ -16,8 +16,9 @@ import { CardTitle } from "@/components/ui/card";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ExpenseForm } from "@/components/forms/expense-form";
+import { FilterBar } from "@/components/ui/filter-bar";
 import { useFinanceStore } from "@/store/finance-store";
-import { monthlyExpenses, toMonthly, fmt } from "@/lib/finance";
+import { monthlyExpenses, filterByOwner, toMonthly, fmt } from "@/lib/finance";
 import type { Expense } from "@/types";
 
 const categoryColors: Record<string, string> = {
@@ -38,7 +39,9 @@ const categoryColors: Record<string, string> = {
 };
 
 export default function ExpensesPage() {
-  const expenses = useFinanceStore((s) => s.expenses);
+  const allExpenses = useFinanceStore((s) => s.expenses);
+  const ownerFilter = useFinanceStore((s) => s.ownerFilter);
+  const expenses = filterByOwner(allExpenses, ownerFilter);
   const addExpense = useFinanceStore((s) => s.addExpense);
   const updateExpense = useFinanceStore((s) => s.updateExpense);
   const deleteExpense = useFinanceStore((s) => s.deleteExpense);
@@ -86,14 +89,17 @@ export default function ExpensesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Expenses</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Monthly spending breakdown</p>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
-          <Plus size={15} /> Add Expense
-        </button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <FilterBar />
+          <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
+            <Plus size={15} /> Add Expense
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

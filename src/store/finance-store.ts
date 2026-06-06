@@ -157,6 +157,10 @@ interface FinanceStore {
   addMember: (item: Omit<HouseholdMember, "id">) => void;
   updateMember: (id: string, patch: Partial<Omit<HouseholdMember, "id">>) => void;
   deleteMember: (id: string) => void;
+
+  // UI filter state — not persisted
+  ownerFilter: string | null;
+  setOwnerFilter: (filter: string | null) => void;
 }
 
 export const useFinanceStore = create<FinanceStore>()(
@@ -174,6 +178,8 @@ export const useFinanceStore = create<FinanceStore>()(
   householdName: null,
   isLoadedFromSupabase: false,
   isAuthenticatedUser: false,
+  ownerFilter: null,
+  setOwnerFilter: (filter) => set({ ownerFilter: filter }),
 
   // ── Load from Supabase ────────────────────────────────────────────────────
 

@@ -9,6 +9,12 @@ import type {
   NetWorthSnapshot,
 } from "@/types";
 
+export function filterByOwner<T extends { owner?: string }>(items: T[], filter: string | null): T[] {
+  if (filter === null) return items;
+  if (filter === "Joint") return items.filter((i) => i.owner === "Joint");
+  return items.filter((i) => i.owner === filter || i.owner === "Joint");
+}
+
 export function toMonthly(amount: number, frequency: FrequencyType): number {
   switch (frequency) {
     case "weekly":
