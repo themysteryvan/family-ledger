@@ -51,10 +51,6 @@ export default function AssetsPage() {
   const [editItem, setEditItem] = useState<Asset | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  console.log("[assets] ownerFilter:", ownerFilter);
-  console.log("[assets] asset owners:", allAssets.map((a) => ({ name: a.name, owner: a.owner })));
-  console.log("[assets] filtered count:", assets.length);
-
   const total = totalAssets(assets);
   const realEstate = assets.filter((a) => a.category === "real_estate").reduce((s, a) => s + a.value, 0);
   const retirement = assets.filter((a) => a.category === "retirement").reduce((s, a) => s + a.value, 0);

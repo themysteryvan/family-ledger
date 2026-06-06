@@ -11,8 +11,10 @@ import type {
 
 export function filterByOwner<T extends { owner?: string }>(items: T[], filter: string | null): T[] {
   if (filter === null) return items;
-  if (filter === "Joint") return items.filter((i) => i.owner === "Joint");
-  return items.filter((i) => i.owner === filter || i.owner === "Joint");
+  const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
+  const target = norm(filter);
+  if (filter === "Joint") return items.filter((i) => norm(i.owner) === "joint");
+  return items.filter((i) => norm(i.owner) === target || norm(i.owner) === "joint");
 }
 
 export function toMonthly(amount: number, frequency: FrequencyType): number {
