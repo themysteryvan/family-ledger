@@ -73,7 +73,7 @@ export function buildFinancialSummary(
     totalDebt: debt,
     netWorth: assets_ - debt,
     savingsRate: income > 0 ? (cashFlow / income) * 100 : 0,
-    debtToIncomeRatio: income > 0 ? (debt / (income * 12)) * 100 : 0,
+    debtToIncomeRatio: income > 0 ? (debtPayments / income) * 100 : 0,
     expenseRatio: income > 0 ? (expense / income) * 100 : 0,
   };
 }
