@@ -107,7 +107,7 @@ export default function DebtsPage() {
       color: CHART_COLORS[i % CHART_COLORS.length],
       ...computeProjection(debt.balance, debt.interestRate, debt.minimumPayment),
     }))
-    .sort((a, b) => (b.payoffMonth ?? 361) - (a.payoffMonth ?? 361));
+    .sort((a, b) => b.debt.balance - a.debt.balance);
 
   const displayMonths = debts.length > 0
     ? Math.min(Math.max(...projections.map(p => p.payoffMonth ?? 180), 24), 360)
