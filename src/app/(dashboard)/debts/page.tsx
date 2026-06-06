@@ -191,7 +191,7 @@ export default function DebtsPage() {
                 dataKey="month"
                 domain={[0, displayMonths]}
                 ticks={yearTicks}
-                tickFormatter={(m) => m === 0 ? "Today" : `Yr ${m / 12}`}
+                tickFormatter={(m) => String(new Date().getFullYear() + m / 12)}
                 tick={{ fill: "var(--text-muted)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
