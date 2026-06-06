@@ -14,14 +14,14 @@ export function FilterBar() {
   ];
 
   return (
-    <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="grid gap-1.5" style={{ gridAutoFlow: "column", gridAutoColumns: "1fr" }}>
       {buttons.map(({ label, value }) => {
         const active = ownerFilter === value;
         return (
           <button
             key={label}
             onClick={() => setOwnerFilter(value)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
             style={{
               background: active ? "var(--accent-blue)" : "var(--bg-elevated)",
               color: active ? "#fff" : "var(--text-secondary)",
