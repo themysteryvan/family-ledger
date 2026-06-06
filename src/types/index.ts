@@ -1,3 +1,9 @@
+export interface HouseholdMember {
+  id: string;
+  name: string;
+  role?: string;
+}
+
 export type FrequencyType =
   | "monthly"
   | "biweekly"

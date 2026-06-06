@@ -1,15 +1,15 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Income, Expense, Asset, Debt, Project, RetirementAccount } from "@/types";
+import type { Income, Expense, Asset, Debt, Project, RetirementAccount, HouseholdMember } from "@/types";
 import { createClient } from "@/lib/supabase/client";
 import {
-  toIncome, toExpense, toAsset, toDebt, toProject, toRetirementAccount,
-  fromIncome, fromExpense, fromAsset, fromDebt, fromProject, fromRetirementAccount,
+  toIncome, toExpense, toAsset, toDebt, toProject, toRetirementAccount, toHouseholdMember,
+  fromIncome, fromExpense, fromAsset, fromDebt, fromProject, fromRetirementAccount, fromHouseholdMember,
   type IncomeRow, type ExpenseRow, type AssetRow, type DebtRow, type ProjectRow,
-  type RetirementAccountRow,
+  type RetirementAccountRow, type HouseholdMemberRow,
 } from "@/lib/supabase/mappers";
 import {
-  mockIncomes, mockExpenses, mockAssets, mockDebts, mockProjects, mockRetirementAccounts,
+  mockIncomes, mockExpenses, mockAssets, mockDebts, mockProjects, mockRetirementAccounts, mockHouseholdMembers,
 } from "@/lib/mock-data";
 
 function uid(): string {
@@ -118,6 +118,7 @@ interface FinanceStore {
   debts: Debt[];
   projects: Project[];
   retirementAccounts: RetirementAccount[];
+  householdMembers: HouseholdMember[];
 
   // Auth / sync state
   householdId: string | null;
@@ -152,6 +153,10 @@ interface FinanceStore {
   addRetirementAccount: (item: Omit<RetirementAccount, "id">) => void;
   updateRetirementAccount: (id: string, patch: Partial<Omit<RetirementAccount, "id">>) => void;
   deleteRetirementAccount: (id: string) => void;
+
+  addMember: (item: Omit<HouseholdMember, "id">) => void;
+  updateMember: (id: string, patch: Partial<Omit<HouseholdMember, "id">>) => void;
+  deleteMember: (id: string) => void;
 }
 
 export const useFinanceStore = create<FinanceStore>()(
@@ -163,6 +168,7 @@ export const useFinanceStore = create<FinanceStore>()(
   debts: mockDebts,
   projects: mockProjects,
   retirementAccounts: mockRetirementAccounts,
+  householdMembers: mockHouseholdMembers,
 
   householdId: null,
   householdName: null,
@@ -213,7 +219,7 @@ export const useFinanceStore = create<FinanceStore>()(
     // 4. Snapshot existing state — used as fallback if individual table fetches fail
     const existing = get();
 
-    // 5. Fetch all 6 tables in parallel
+    // 5. Fetch all tables in parallel
     const [
       { data: incomeRows,     error: incomeErr },
       { data: expenseRows,    error: expenseErr },
@@ -221,6 +227,7 @@ export const useFinanceStore = create<FinanceStore>()(
       { data: debtRows,       error: debtErr },
       { data: projectRows,    error: projectErr },
       { data: retirementRows, error: retirementErr },
+      { data: memberRows,     error: memberErr },
     ] = await Promise.all([
       supabase.from("income").select("*").eq("household_id", householdId),
       supabase.from("expenses").select("*").eq("household_id", householdId),
@@ -228,6 +235,7 @@ export const useFinanceStore = create<FinanceStore>()(
       supabase.from("debts").select("*").eq("household_id", householdId),
       supabase.from("projects").select("*").eq("household_id", householdId),
       supabase.from("retirement_accounts").select("*").eq("household_id", householdId),
+      supabase.from("household_members").select("*").eq("household_id", householdId),
     ]);
 
     if (incomeErr)     console.error("[finance-store] incomes fetch error:", incomeErr);
@@ -236,6 +244,7 @@ export const useFinanceStore = create<FinanceStore>()(
     if (debtErr)       console.error("[finance-store] debts fetch error:", debtErr);
     if (projectErr)    console.error("[finance-store] projects fetch error:", projectErr);
     if (retirementErr) console.error("[finance-store] retirement_accounts fetch error:", retirementErr);
+    if (memberErr)     console.error("[finance-store] household_members fetch error:", memberErr);
 
     // 6. Overwrite store with Supabase truth — fall back to existing data on error
     set({
@@ -246,6 +255,7 @@ export const useFinanceStore = create<FinanceStore>()(
       debts:              debtErr       ? existing.debts              : (debtRows       as DebtRow[]).map(toDebt),
       projects:           projectErr    ? existing.projects           : (projectRows    as ProjectRow[]).map(toProject),
       retirementAccounts: retirementErr ? existing.retirementAccounts : (retirementRows as RetirementAccountRow[]).map(toRetirementAccount),
+      householdMembers:   memberErr     ? existing.householdMembers   : (memberRows     as HouseholdMemberRow[]).map(toHouseholdMember),
     });
   },
 
@@ -270,6 +280,7 @@ export const useFinanceStore = create<FinanceStore>()(
       debts: mockDebts,
       projects: mockProjects,
       retirementAccounts: mockRetirementAccounts,
+      householdMembers: mockHouseholdMembers,
     });
   },
 
@@ -491,6 +502,42 @@ export const useFinanceStore = create<FinanceStore>()(
       });
     }
   },
+
+  // ── Household Members ─────────────────────────────────────────────────────
+
+  addMember(item) {
+    const id = uid();
+    set((s) => ({ householdMembers: [...s.householdMembers, { ...item, id }] }));
+    const { householdId } = get();
+    if (householdId) {
+      createClient().from("household_members").insert({ id, ...fromHouseholdMember(item, householdId) }).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to insert member:", error);
+      });
+    }
+  },
+
+  updateMember(id, patch) {
+    set((s) => ({ householdMembers: s.householdMembers.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
+    const { householdId } = get();
+    if (householdId) {
+      const updated = get().householdMembers.find((m) => m.id === id);
+      if (updated) {
+        const { id: _id, ...rest } = updated;
+        createClient().from("household_members").update(fromHouseholdMember(rest, householdId)).eq("id", id).then(({ error }) => {
+          if (error) console.error("[finance-store] Failed to update member:", error);
+        });
+      }
+    }
+  },
+
+  deleteMember(id) {
+    set((s) => ({ householdMembers: s.householdMembers.filter((m) => m.id !== id) }));
+    if (get().householdId) {
+      createClient().from("household_members").delete().eq("id", id).then(({ error }) => {
+        if (error) console.error("[finance-store] Failed to delete member:", error);
+      });
+    }
+  },
     }),
     {
       name: "family-ledger-store",
@@ -545,6 +592,7 @@ export const useFinanceStore = create<FinanceStore>()(
         debts: state.debts,
         projects: state.projects,
         retirementAccounts: state.retirementAccounts,
+        householdMembers: state.householdMembers,
         householdId: state.householdId,
         householdName: state.householdName,
       }),

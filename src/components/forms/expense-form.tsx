@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Expense, FrequencyType } from "@/types";
 import { Field, Input, Select, Textarea, Checkbox, FormActions } from "@/components/ui/form-field";
+import { OwnerSelect } from "@/components/ui/owner-select";
 import { CategorySelect } from "@/components/ui/category-select";
 
 interface Props {
@@ -128,11 +129,7 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
       </div>
 
       <Field label="Owner (optional)">
-        <Input
-          value={f.owner}
-          onChange={(e) => set("owner", e.target.value)}
-          placeholder="e.g. Jake, Sarah, Joint"
-        />
+        <OwnerSelect value={f.owner} onChange={(v) => set("owner", v)} />
       </Field>
 
       <Field label="Notes (optional)">

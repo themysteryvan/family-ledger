@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { RetirementAccount, RetirementAccountType } from "@/types";
 import { Field, Input, Select, Textarea, FormActions } from "@/components/ui/form-field";
+import { OwnerSelect } from "@/components/ui/owner-select";
 
 interface Props {
   initial?: RetirementAccount;
@@ -70,11 +71,7 @@ export function RetirementForm({ initial, onSave, onClose }: Props) {
           </Select>
         </Field>
         <Field label="Owner">
-          <Input
-            value={f.owner}
-            onChange={(e) => set("owner", e.target.value)}
-            placeholder="e.g. Alex, Jordan"
-          />
+          <OwnerSelect value={f.owner} onChange={(v) => set("owner", v)} optional={false} />
         </Field>
       </div>
 

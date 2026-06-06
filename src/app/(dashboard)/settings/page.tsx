@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check } from "lucide-react";
+import { Check, Pencil, Trash2, Plus, X } from "lucide-react";
 import { CardTitle } from "@/components/ui/card";
 import { useFinanceStore } from "@/store/finance-store";
 import { createClient } from "@/lib/supabase/client";
@@ -10,6 +10,10 @@ export default function SettingsPage() {
   const householdName = useFinanceStore((s) => s.householdName);
   const isLoadedFromSupabase = useFinanceStore((s) => s.isLoadedFromSupabase);
   const updateHouseholdName = useFinanceStore((s) => s.updateHouseholdName);
+  const householdMembers = useFinanceStore((s) => s.householdMembers);
+  const addMember = useFinanceStore((s) => s.addMember);
+  const updateMember = useFinanceStore((s) => s.updateMember);
+  const deleteMember = useFinanceStore((s) => s.deleteMember);
 
   const [nameInput, setNameInput] = useState("");
   const [nameSaved, setNameSaved] = useState(false);
@@ -18,6 +22,15 @@ export default function SettingsPage() {
   const [emailInput, setEmailInput] = useState("");
   const [emailStatus, setEmailStatus] = useState<"idle" | "pending" | "sent" | "error">("idle");
   const [emailError, setEmailError] = useState("");
+
+  // Member add/edit state
+  const [addingMember, setAddingMember] = useState(false);
+  const [newMemberName, setNewMemberName] = useState("");
+  const [newMemberRole, setNewMemberRole] = useState("");
+  const [editingMemberId, setEditingMemberId] = useState<string | null>(null);
+  const [editMemberName, setEditMemberName] = useState("");
+  const [editMemberRole, setEditMemberRole] = useState("");
+  const [deletingMemberId, setDeletingMemberId] = useState<string | null>(null);
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -83,6 +96,29 @@ export default function SettingsPage() {
     } else {
       setEmailStatus("sent");
     }
+  }
+
+  function handleAddMember() {
+    const name = newMemberName.trim();
+    if (!name) return;
+    addMember({ name, role: newMemberRole.trim() || undefined });
+    setNewMemberName("");
+    setNewMemberRole("");
+    setAddingMember(false);
+  }
+
+  function startEdit(member: { id: string; name: string; role?: string }) {
+    setEditingMemberId(member.id);
+    setEditMemberName(member.name);
+    setEditMemberRole(member.role ?? "");
+    setDeletingMemberId(null);
+  }
+
+  function handleSaveEdit() {
+    const name = editMemberName.trim();
+    if (!name || !editingMemberId) return;
+    updateMember(editingMemberId, { name, role: editMemberRole.trim() || undefined });
+    setEditingMemberId(null);
   }
 
   const inputStyle = {
@@ -225,6 +261,103 @@ export default function SettingsPage() {
           </div>
         </>
       )}
+
+      {/* Household Members */}
+      <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+        <div className="flex items-center justify-between">
+          <CardTitle>Household Members</CardTitle>
+          {!addingMember && (
+            <button
+              onClick={() => { setAddingMember(true); setEditingMemberId(null); setDeletingMemberId(null); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+              style={{ background: "var(--accent-blue)", color: "#fff" }}
+            >
+              <Plus size={13} /> Add member
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {householdMembers.map((member) => (
+            <div key={member.id}>
+              {editingMemberId === member.id ? (
+                <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: "var(--bg-elevated)" }}>
+                  <input
+                    autoFocus
+                    value={editMemberName}
+                    onChange={(e) => setEditMemberName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(); if (e.key === "Escape") setEditingMemberId(null); }}
+                    placeholder="Name"
+                    className="flex-1 px-2 py-1.5 rounded text-sm outline-none"
+                    style={inputStyle}
+                  />
+                  <input
+                    value={editMemberRole}
+                    onChange={(e) => setEditMemberRole(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === "Enter") handleSaveEdit(); if (e.key === "Escape") setEditingMemberId(null); }}
+                    placeholder="Role (optional)"
+                    className="w-32 px-2 py-1.5 rounded text-sm outline-none"
+                    style={inputStyle}
+                  />
+                  <button onClick={handleSaveEdit} className="px-3 py-1.5 rounded text-xs font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>Save</button>
+                  <button onClick={() => setEditingMemberId(null)} className="p-1.5 rounded" style={{ color: "var(--text-muted)" }}><X size={14} /></button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between px-3 py-2.5 rounded-lg" style={{ background: "var(--bg-elevated)" }}>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{member.name}</span>
+                    {member.role && (
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: "var(--bg-muted)", color: "var(--text-muted)" }}>{member.role}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {deletingMemberId === member.id ? (
+                      <>
+                        <span className="text-xs mr-1" style={{ color: "var(--text-muted)" }}>Delete?</span>
+                        <button onClick={() => { deleteMember(member.id); setDeletingMemberId(null); }} className="text-xs px-2 py-0.5 rounded font-medium" style={{ color: "var(--accent-red)", background: "var(--accent-red-dim)" }}>Yes</button>
+                        <button onClick={() => setDeletingMemberId(null)} className="text-xs px-2 py-0.5 rounded font-medium ml-1" style={{ color: "var(--text-muted)", background: "var(--bg-muted)" }}>No</button>
+                      </>
+                    ) : (
+                      <>
+                        <button onClick={() => startEdit(member)} className="p-1.5 rounded hover:bg-[var(--bg-muted)]" style={{ color: "var(--text-muted)" }}><Pencil size={13} /></button>
+                        <button onClick={() => setDeletingMemberId(member.id)} className="p-1.5 rounded hover:bg-[var(--accent-red-dim)]" style={{ color: "var(--text-muted)" }}><Trash2 size={13} /></button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {householdMembers.length === 0 && !addingMember && (
+            <p className="text-sm py-2" style={{ color: "var(--text-muted)" }}>No members yet. Add members to assign ownership to income, assets, debts, and expenses.</p>
+          )}
+
+          {addingMember && (
+            <div className="flex items-center gap-2 p-2 rounded-lg" style={{ background: "var(--bg-elevated)" }}>
+              <input
+                autoFocus
+                value={newMemberName}
+                onChange={(e) => setNewMemberName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddMember(); if (e.key === "Escape") setAddingMember(false); }}
+                placeholder="Name"
+                className="flex-1 px-2 py-1.5 rounded text-sm outline-none"
+                style={inputStyle}
+              />
+              <input
+                value={newMemberRole}
+                onChange={(e) => setNewMemberRole(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") handleAddMember(); if (e.key === "Escape") setAddingMember(false); }}
+                placeholder="Role (optional)"
+                className="w-32 px-2 py-1.5 rounded text-sm outline-none"
+                style={inputStyle}
+              />
+              <button onClick={handleAddMember} disabled={!newMemberName.trim()} className="px-3 py-1.5 rounded text-xs font-medium" style={{ background: "var(--accent-blue)", color: "#fff", opacity: newMemberName.trim() ? 1 : 0.5 }}>Add</button>
+              <button onClick={() => { setAddingMember(false); setNewMemberName(""); setNewMemberRole(""); }} className="p-1.5 rounded" style={{ color: "var(--text-muted)" }}><X size={14} /></button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Data status */}
       <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>

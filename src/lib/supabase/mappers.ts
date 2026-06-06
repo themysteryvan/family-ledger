@@ -1,4 +1,4 @@
-import type { Income, Expense, Asset, Debt, Project, ProjectExpense, RetirementAccount } from "@/types";
+import type { Income, Expense, Asset, Debt, Project, ProjectExpense, RetirementAccount, HouseholdMember } from "@/types";
 
 // ── Row types (snake_case matching actual Supabase columns) ───────────────────
 
@@ -33,12 +33,19 @@ export interface ProjectRow {
   target_amount: number; current_amount: number; category: string;
   target_date: string | null; notes: string | null;
 }
+export interface HouseholdMemberRow {
+  id: string; household_id: string; name: string; role: string | null; created_at: string;
+}
 export interface ProjectExpenseRow {
   id: string; project_id: string; name: string; amount: number;
   is_paid: boolean; due_date: string | null;
 }
 
 // ── To domain ────────────────────────────────────────────────────────────────
+
+export const toHouseholdMember = (r: HouseholdMemberRow): HouseholdMember => ({
+  id: r.id, name: r.name, role: r.role ?? undefined,
+});
 
 export const toIncome = (r: IncomeRow): Income => ({
   id: r.id, name: r.name, amount: r.amount,
@@ -110,6 +117,10 @@ export const toProject = (r: ProjectRow): Project => ({
 });
 
 // ── To row (omit id and household_id — provided separately) ─────────────────
+
+export const fromHouseholdMember = (item: Omit<HouseholdMember, "id">, householdId: string) => ({
+  household_id: householdId, name: item.name, role: item.role ?? null,
+});
 
 export const fromIncome = (item: Omit<Income, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, amount: item.amount,

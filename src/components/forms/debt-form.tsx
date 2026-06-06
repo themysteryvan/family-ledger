@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { Debt } from "@/types";
 import { Field, Input, Select, Textarea, FormActions } from "@/components/ui/form-field";
+import { OwnerSelect } from "@/components/ui/owner-select";
 
 interface Props {
   initial?: Debt;
@@ -135,11 +136,7 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
       </div>
 
       <Field label="Owner (optional)">
-        <Input
-          value={f.owner}
-          onChange={(e) => set("owner", e.target.value)}
-          placeholder="e.g. Jake, Sarah, Joint"
-        />
+        <OwnerSelect value={f.owner} onChange={(v) => set("owner", v)} />
       </Field>
 
       <Field label="Notes (optional)">
