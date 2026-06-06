@@ -83,6 +83,12 @@ function monthToDate(months: number): string {
   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
 }
 
+function monthToYear(months: number): number {
+  const d = new Date();
+  d.setMonth(d.getMonth() + months);
+  return d.getFullYear();
+}
+
 export default function DebtsPage() {
   const debts = useFinanceStore((s) => s.debts);
   const addDebt = useFinanceStore((s) => s.addDebt);
@@ -236,50 +242,32 @@ export default function DebtsPage() {
             </AreaChart>
           </ResponsiveContainer>
 
-          {/* Per-debt summary */}
-          <div className="mt-5 pt-4 border-t overflow-x-auto" style={{ borderColor: "var(--border)" }}>
-            <table className="w-full text-sm min-w-[520px]">
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-                  {["Debt", "Balance", "Min. Payment", "Payoff Date", "Total Interest"].map((h) => (
-                    <th key={h} className="pb-2.5 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {projections.map((p, i) => (
-                  <tr key={p.debt.id} style={{ borderBottom: i < projections.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
-                    <td className="py-2.5 pr-4">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: p.color }} />
-                        <span className="font-medium" style={{ color: "var(--text-primary)" }}>{p.debt.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-2.5 pr-4" style={{ color: "var(--accent-red)" }}>{fmt(p.debt.balance)}</td>
-                    <td className="py-2.5 pr-4" style={{ color: "var(--text-secondary)" }}>{fmt(p.debt.minimumPayment)}/mo</td>
-                    <td className="py-2.5 pr-4">
-                      {p.payoffMonth !== null
-                        ? <span style={{ color: "var(--accent-green)" }}>{monthToDate(p.payoffMonth)}</span>
-                        : <span style={{ color: "var(--accent-red)" }}>Payment too low</span>}
-                    </td>
-                    <td className="py-2.5" style={{ color: "var(--text-secondary)" }}>
-                      {p.totalInterest !== null ? fmt(p.totalInterest) : "—"}
-                    </td>
-                  </tr>
-                ))}
-                <tr style={{ borderTop: "2px solid var(--border)" }}>
-                  <td className="pt-3 pb-1 font-semibold" style={{ color: "var(--text-primary)" }}>Total</td>
-                  <td className="pt-3 pb-1 font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(total)}</td>
-                  <td className="pt-3 pb-1 font-semibold" style={{ color: "var(--text-secondary)" }}>{fmt(totalMinPayments)}/mo</td>
-                  <td className="pt-3 pb-1" style={{ color: lastPayoffMonth ? "var(--accent-green)" : "var(--text-muted)" }}>
-                    {lastPayoffMonth ? monthToDate(lastPayoffMonth) : "—"}
-                  </td>
-                  <td className="pt-3 pb-1 font-semibold" style={{ color: "var(--text-secondary)" }}>
-                    {totalInterestAll !== null ? fmt(totalInterestAll) : "—"}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Legend */}
+          <div className="mt-5 pt-4 border-t" style={{ borderColor: "var(--border)" }}>
+            {projections.map((p) => (
+              <div key={p.debt.id} className="flex items-center gap-3 py-1.5 text-sm">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: p.color }} />
+                <span className="flex-1 truncate font-medium" style={{ color: "var(--text-primary)" }}>{p.debt.name}</span>
+                <span className="text-xs flex-shrink-0" style={{ color: p.payoffMonth ? "var(--accent-green)" : "var(--accent-red)" }}>
+                  {p.payoffMonth ? monthToYear(p.payoffMonth) : "Never"}
+                </span>
+                <span className="text-xs flex-shrink-0 w-32 text-right" style={{ color: "var(--text-muted)" }}>
+                  {p.totalInterest !== null ? `${fmt(p.totalInterest)} interest` : "—"}
+                </span>
+              </div>
+            ))}
+            {totalInterestAll !== null && (
+              <div className="flex items-center gap-3 pt-2 mt-1 border-t text-sm" style={{ borderColor: "var(--border-subtle)" }}>
+                <span className="w-2.5 flex-shrink-0" />
+                <span className="flex-1 font-semibold" style={{ color: "var(--text-secondary)" }}>Total interest</span>
+                <span className="text-xs flex-shrink-0" style={{ color: "var(--text-muted)" }}>
+                  {lastPayoffMonth ? monthToYear(lastPayoffMonth) : ""}
+                </span>
+                <span className="text-xs flex-shrink-0 w-32 text-right font-semibold" style={{ color: "var(--text-secondary)" }}>
+                  {fmt(totalInterestAll)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}
