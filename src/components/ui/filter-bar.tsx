@@ -7,31 +7,28 @@ export function FilterBar() {
   const ownerFilter = useFinanceStore((s) => s.ownerFilter);
   const setOwnerFilter = useFinanceStore((s) => s.setOwnerFilter);
 
-  const buttons = [
-    { label: "All", value: null },
-    ...members.map((m) => ({ label: m.name, value: m.name })),
-    { label: "Joint", value: "Joint" },
-  ];
+  function handleChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const val = e.target.value;
+    setOwnerFilter(val === "" ? null : val);
+  }
 
   return (
-    <div className="grid gap-1.5" style={{ gridAutoFlow: "column", gridAutoColumns: "1fr" }}>
-      {buttons.map(({ label, value }) => {
-        const active = ownerFilter === value;
-        return (
-          <button
-            key={label}
-            onClick={() => setOwnerFilter(value)}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap"
-            style={{
-              background: active ? "var(--accent-blue)" : "var(--bg-elevated)",
-              color: active ? "#fff" : "var(--text-secondary)",
-              border: active ? "1px solid var(--accent-blue)" : "1px solid var(--border)",
-            }}
-          >
-            {label}
-          </button>
-        );
-      })}
-    </div>
+    <select
+      value={ownerFilter ?? ""}
+      onChange={handleChange}
+      className="px-3 py-1.5 rounded-lg text-xs font-medium outline-none transition-colors"
+      style={{
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
+        color: "var(--text-secondary)",
+        appearance: "auto",
+      }}
+    >
+      <option value="">All</option>
+      {members.map((m) => (
+        <option key={m.id} value={m.name}>{m.name}</option>
+      ))}
+      <option value="Joint">Joint</option>
+    </select>
   );
 }
