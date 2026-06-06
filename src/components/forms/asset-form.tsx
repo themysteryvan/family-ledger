@@ -25,6 +25,7 @@ export function AssetForm({ initial, onSave, onClose }: Props) {
     name: initial?.name ?? "",
     value: initial?.value != null ? String(initial.value) : "",
     category: initial?.category ?? "cash" as Asset["category"],
+    owner: initial?.owner ?? "",
     appreciationRate: initial?.appreciationRate != null ? String(initial.appreciationRate) : "",
     purchasePrice: initial?.purchasePrice != null ? String(initial.purchasePrice) : "",
     purchaseDate: initial?.purchaseDate ?? "",
@@ -40,6 +41,7 @@ export function AssetForm({ initial, onSave, onClose }: Props) {
       name: f.name.trim(),
       value: parseFloat(f.value) || 0,
       category: f.category,
+      owner: f.owner.trim() || undefined,
       appreciationRate: f.appreciationRate !== "" ? parseFloat(f.appreciationRate) : undefined,
       purchasePrice: f.purchasePrice !== "" ? parseFloat(f.purchasePrice) : undefined,
       purchaseDate: f.purchaseDate || undefined,
@@ -84,6 +86,14 @@ export function AssetForm({ initial, onSave, onClose }: Props) {
           </Select>
         </Field>
       </div>
+
+      <Field label="Owner (optional)">
+        <Input
+          value={f.owner}
+          onChange={(e) => set("owner", e.target.value)}
+          placeholder="e.g. Jake, Sarah, Joint"
+        />
+      </Field>
 
       <div className="grid grid-cols-2 gap-4">
         <Field label="Purchase price (optional)">
