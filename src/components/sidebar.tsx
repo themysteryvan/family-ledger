@@ -30,22 +30,22 @@ import { createClient } from "@/lib/supabase/client";
 import { useFinanceStore } from "@/store/finance-store";
 
 const navItems = [
-  { label: "Advisor", href: "/advisor", icon: Sparkles },
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Expenses", href: "/expenses", icon: Receipt },
+  { label: "Household", href: "/household", icon: Home },
+  { label: "Advisor", href: "/advisor", icon: Sparkles },
   { label: "Income", href: "/income", icon: TrendingUp },
+  { label: "Expenses", href: "/expenses", icon: Receipt },
+  { label: "Budget", href: "/budget", icon: Target },
   { label: "Assets", href: "/assets", icon: Building2 },
   { label: "Debts", href: "/debts", icon: CreditCard },
   { label: "Retirement", href: "/retirement", icon: PiggyBank },
   { label: "Net Worth", href: "/net-worth", icon: BarChart3 },
-  { label: "Budget", href: "/budget", icon: Target },
-  { label: "Projects", href: "/projects", icon: FolderOpen },
   { label: "Forecasts", href: "/forecasts", icon: LineChart },
-  { label: "Reports", href: "/reports", icon: FileText },
+  { label: "Projects", href: "/projects", icon: FolderOpen },
   { label: "Health Score", href: "/health-score", icon: HeartPulse },
+  { label: "Reports", href: "/reports", icon: FileText },
   { label: "Import", href: "/import", icon: Upload },
   { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Household", href: "/household", icon: Home },
 ];
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
