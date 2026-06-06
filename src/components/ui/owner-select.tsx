@@ -90,6 +90,9 @@ export function OwnerSelect({ value, onChange, optional = true }: Props) {
       style={{ ...style, appearance: "auto" }}
     >
       {optional && <option value="">— Unassigned —</option>}
+      {/* Joint is a permanent built-in option; when filtering by person it
+          should appear in both people's views, not just one. */}
+      <option value="Joint">Joint</option>
       {members.map((m) => (
         <option key={m.id} value={m.name}>
           {m.name}{m.role ? ` (${m.role})` : ""}

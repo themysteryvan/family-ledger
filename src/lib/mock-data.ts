@@ -3,7 +3,6 @@ import type { Income, Expense, Asset, Debt, Project, RetirementAccount, Househol
 export const mockHouseholdMembers: HouseholdMember[] = [
   { id: "mem-1", name: "Jake", role: "Primary" },
   { id: "mem-2", name: "Sarah", role: "Spouse" },
-  { id: "mem-3", name: "Joint", role: "Shared" },
 ];
 
 // Henderson family: Jake + Sarah Henderson, 2 kids (Owen 7, Lily 3), dog Biscuit
