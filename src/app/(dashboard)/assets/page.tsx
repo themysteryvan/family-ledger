@@ -152,14 +152,14 @@ export default function AssetsPage() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-subtle)" }}>
-              {["Asset", "Category", "Current Value", "Purchase Price", "Gain/Loss", "Growth Rate", "Data Source", ""].map((h) => (
+              {["Asset", "Owner", "Category", "Current Value", "Purchase Price", "Gain/Loss", "Growth Rate", "Data Source", ""].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-xs font-medium" style={{ color: "var(--text-muted)" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {assets.length === 0 && (
-              <tr><td colSpan={8}>
+              <tr><td colSpan={9}>
                 <EmptyState icon={Building2} title="No assets yet" description="Add your home, retirement accounts, investments, and savings to track your total wealth." action="Add Asset" onAction={openAdd} />
               </td></tr>
             )}
@@ -168,6 +168,7 @@ export default function AssetsPage() {
               return (
                 <tr key={asset.id} style={{ borderBottom: i < assets.length - 1 ? "1px solid var(--border-subtle)" : "none" }}>
                   <td className="px-5 py-3 font-medium" style={{ color: "var(--text-primary)" }}>{asset.name}</td>
+                  <td className="px-5 py-3" style={{ color: "var(--text-secondary)" }}>{asset.owner || "—"}</td>
                   <td className="px-5 py-3">
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "var(--bg-elevated)", color: categoryColors[asset.category] || "var(--text-muted)" }}>
                       {categoryLabels[asset.category]}
