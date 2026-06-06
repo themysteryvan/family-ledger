@@ -16,7 +16,7 @@ const inputStyle = {
   color: "var(--text-primary)",
 };
 
-export default function MembersPage() {
+export default function HouseholdPage() {
   const members = useFinanceStore((s) => s.householdMembers);
   const addMember = useFinanceStore((s) => s.addMember);
   const updateMember = useFinanceStore((s) => s.updateMember);
@@ -75,7 +75,7 @@ export default function MembersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Members</h1>
+          <h1 className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>Household</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Household members assigned to income, assets, debts, and expenses</p>
         </div>
         <button
