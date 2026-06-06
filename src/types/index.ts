@@ -58,6 +58,7 @@ export interface Asset {
     | "cash"
     | "crypto"
     | "other";
+  owner?: string;
   appreciationRate?: number;
   purchasePrice?: number;
   purchaseDate?: string;

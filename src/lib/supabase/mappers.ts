@@ -4,7 +4,7 @@ import type { Income, Expense, Asset, Debt, Project, ProjectExpense, RetirementA
 
 export interface IncomeRow {
   id: string; household_id: string; name: string; amount: number;
-  frequency: string; type: string; guaranteed: boolean;
+  frequency: string; type: string; owner: string; guaranteed: boolean;
   start_date: string | null; data_source: string | null; notes: string | null;
 }
 export interface ExpenseRow {
@@ -44,7 +44,7 @@ export const toIncome = (r: IncomeRow): Income => ({
   id: r.id, name: r.name, amount: r.amount,
   frequency: r.frequency as Income["frequency"],
   category: r.type as Income["category"],
-  owner: "",
+  owner: r.owner,
   isActive: r.guaranteed,
   startDate: r.start_date ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
@@ -63,6 +63,7 @@ export const toExpense = (r: ExpenseRow): Expense => ({
 export const toAsset = (r: AssetRow): Asset => ({
   id: r.id, name: r.name, value: r.value,
   category: r.type as Asset["category"],
+  owner: r.owner ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
 });
@@ -112,6 +113,7 @@ export const fromIncome = (item: Omit<Income, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, amount: item.amount,
   frequency: item.frequency,
   type: item.category,
+  owner: item.owner,
   guaranteed: item.isActive,
   start_date: item.startDate ?? null,
   data_source: item.dataSource ?? null,
@@ -137,7 +139,7 @@ function assetLiquidity(category: string): string {
 export const fromAsset = (item: Omit<Asset, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, value: item.value,
   type: item.category,
-  owner: null, institution: null,
+  owner: item.owner ?? null, institution: null,
   liquidity: assetLiquidity(item.category),
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
