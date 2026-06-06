@@ -16,6 +16,7 @@ import {
   FileText,
   HeartPulse,
   Settings,
+  Users,
   Wallet,
   Upload,
   Sparkles,
@@ -44,6 +45,7 @@ const navItems = [
   { label: "Health Score", href: "/health-score", icon: HeartPulse },
   { label: "Import", href: "/import", icon: Upload },
   { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Members", href: "/members", icon: Users },
 ];
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
