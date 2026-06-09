@@ -155,8 +155,10 @@ async function parseImage(file: File): Promise<Array<{ date: string; description
 
   const res = await fetch("/api/parse-image", { method: "POST", body: formData });
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error((err as { error?: string }).error || "Image parsing failed");
+    const raw = await res.text().catch(() => "");
+    let message = `HTTP ${res.status}`;
+    try { message = (JSON.parse(raw) as { error?: string }).error || message; } catch { message = raw || message; }
+    throw new Error(message);
   }
 
   const { transactions } = await res.json() as {
