@@ -6,13 +6,14 @@ export interface ParsedTransaction {
   amount: number;
 }
 
-const SUPPORTED_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/jpg",
-  "image/png",
-  "image/gif",
-  "image/webp",
-]);
+// Anthropic vision API accepts exactly these four media_type values.
+const ANTHROPIC_MIME_MAP: Record<string, "image/jpeg" | "image/png" | "image/gif" | "image/webp"> = {
+  "image/jpeg": "image/jpeg",
+  "image/jpg":  "image/jpeg", // normalize — Anthropic rejects "image/jpg"
+  "image/png":  "image/png",
+  "image/gif":  "image/gif",
+  "image/webp": "image/webp",
+};
 
 const PROMPT = `You are a financial data extraction assistant. Extract every transaction from this receipt, bank statement screenshot, or financial document image.
 
@@ -42,15 +43,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  const mimeType = (file.type || "image/jpeg").toLowerCase();
+  const rawMime = (file.type || "").toLowerCase();
+  const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
 
-  if (mimeType === "image/heic" || mimeType === "image/heif") {
+  // Reject HEIC by MIME type or file extension — iOS camera often sends empty type for HEIC
+  const isHeic = rawMime === "image/heic" || rawMime === "image/heif" || ext === "heic" || ext === "heif";
+  if (isHeic) {
     return NextResponse.json({
-      error: "HEIC/HEIF images are not supported. Take a screenshot of the statement instead, or use a JPG/PNG photo.",
+      error: "HEIC/HEIF images are not supported by the AI vision API. Take a screenshot instead, or export as JPG/PNG.",
     }, { status: 400 });
   }
 
-  const effectiveMime = SUPPORTED_MIME_TYPES.has(mimeType) ? mimeType : "image/jpeg";
+  const effectiveMime = ANTHROPIC_MIME_MAP[rawMime] ?? ANTHROPIC_MIME_MAP[`image/${ext}`];
+  if (!effectiveMime) {
+    return NextResponse.json({
+      error: `Unsupported image type "${rawMime || ext || "unknown"}". Please use JPG, PNG, GIF, or WebP.`,
+    }, { status: 400 });
+  }
+
+  console.log(`[parse-image] file="${file.name}" rawMime="${rawMime}" effectiveMime="${effectiveMime}" size=${file.size}`);
   const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -71,7 +82,7 @@ export async function POST(req: NextRequest) {
               type: "image",
               source: {
                 type: "base64",
-                media_type: effectiveMime as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                media_type: effectiveMime,
                 data: base64,
               },
             },
