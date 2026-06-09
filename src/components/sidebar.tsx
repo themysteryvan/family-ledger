@@ -19,6 +19,7 @@ import {
   Home,
   Wallet,
   Upload,
+  Download,
   Sparkles,
   PiggyBank,
   LogIn,
@@ -45,6 +46,7 @@ const navItems = [
   { label: "Health Score", href: "/health-score", icon: HeartPulse },
   { label: "Reports", href: "/reports", icon: FileText },
   { label: "Import", href: "/import", icon: Upload },
+  { label: "Export", href: "/export", icon: Download },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
