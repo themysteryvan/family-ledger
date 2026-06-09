@@ -83,16 +83,20 @@ export async function POST(req: NextRequest) {
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    return NextResponse.json({ error: `Anthropic API error ${res.status}: ${err}` }, { status: 502 });
+    const errText = await res.text();
+    console.error("[parse-image] Anthropic API error", res.status, errText);
+    return NextResponse.json({ error: `Anthropic API error ${res.status}: ${errText}` }, { status: 502 });
   }
 
   const data = await res.json();
+  console.log("[parse-image] Anthropic response:", JSON.stringify(data).slice(0, 500));
   const text = (data.content?.[0]?.text ?? "") as string;
 
   const jsonMatch = text.match(/\[[\s\S]*\]/);
   if (!jsonMatch) {
-    return NextResponse.json({ error: "Could not extract transactions from this image." }, { status: 502 });
+    return NextResponse.json({
+      error: `Could not extract transactions from this image. Claude responded: ${text.slice(0, 300)}`,
+    }, { status: 502 });
   }
 
   let transactions: ParsedTransaction[];
@@ -105,8 +109,8 @@ export async function POST(req: NextRequest) {
         description: String(t.description ?? "").trim(),
         amount: Number(t.amount),
       }));
-  } catch {
-    return NextResponse.json({ error: "Failed to parse extracted transactions." }, { status: 502 });
+  } catch (e) {
+    return NextResponse.json({ error: `Failed to parse extracted transactions: ${e}` }, { status: 502 });
   }
 
   if (transactions.length === 0) {
