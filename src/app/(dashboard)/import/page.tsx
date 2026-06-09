@@ -149,6 +149,49 @@ async function parsePDF(file: File): Promise<Array<{ date: string; description: 
   return transactions;
 }
 
+async function compressImage(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+
+      const MAX = 1200;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width >= height) {
+          height = Math.round((height / width) * MAX);
+          width = MAX;
+        } else {
+          width = Math.round((width / height) * MAX);
+          height = MAX;
+        }
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("Canvas 2D context unavailable")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { reject(new Error("Canvas compression produced no output")); return; }
+          const outName = file.name.replace(/\.[^.]+$/, ".jpg");
+          resolve(new File([blob], outName, { type: "image/jpeg" }));
+        },
+        "image/jpeg",
+        0.8,
+      );
+    };
+
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Failed to load image for compression")); };
+    img.src = url;
+  });
+}
+
 async function parseImage(file: File): Promise<Array<{ date: string; description: string; amount: number }>> {
   const formData = new FormData();
   formData.append("file", file);
@@ -348,9 +391,11 @@ export default function ImportPage() {
     if (isImage) {
       setFileType("image");
       setStage("parsing");
-      setParsingLabel({ title: "Reading image…", sub: "Claude is extracting transactions from your photo" });
+      setParsingLabel({ title: "Compressing image…", sub: "Resizing to fit within upload limits" });
       try {
-        const txs = await parseImage(file);
+        const compressed = await compressImage(file);
+        setParsingLabel({ title: "Reading image…", sub: "Claude is extracting transactions from your photo" });
+        const txs = await parseImage(compressed);
         if (txs.length === 0) {
           setError("No transactions found in this image.");
           setStage("upload");
