@@ -957,7 +957,7 @@ export default function ExportPage() {
                 {householdMembers.map((m) => (
                   <option key={m.id} value={m.name}>{m.name}</option>
                 ))}
-                <option value="Joint">Joint only</option>
+                <option value="Joint">Joint</option>
               </select>
             </div>
 
