@@ -28,7 +28,7 @@ export function FilterBar() {
       {members.map((m) => (
         <option key={m.id} value={m.name}>{m.name}</option>
       ))}
-      <option value="Joint">Joint</option>
+      <option value="Joint">Joint only</option>
     </select>
   );
 }

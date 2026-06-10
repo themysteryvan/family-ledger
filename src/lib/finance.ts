@@ -9,6 +9,11 @@ import type {
   NetWorthSnapshot,
 } from "@/types";
 
+// Filtering rules:
+//   null        → all items (Full Household)
+//   "Joint"     → only items explicitly owned by "Joint" (Joint-only scope)
+//   person name → items owned by that person PLUS all Joint items, because
+//                 shared property always belongs on an individual's report
 export function filterByOwner<T extends { owner?: string }>(items: T[], filter: string | null): T[] {
   if (filter === null) return items;
   const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
