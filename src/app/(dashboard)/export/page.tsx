@@ -803,18 +803,23 @@ export default function ExportPage() {
   const debts = useFinanceStore((s) => s.debts);
   const retirementAccounts = useFinanceStore((s) => s.retirementAccounts);
   const householdName = useFinanceStore((s) => s.householdName);
-  const ownerFilter = useFinanceStore((s) => s.ownerFilter);
+  const householdMembers = useFinanceStore((s) => s.householdMembers);
+
+  const [scope, setScope] = useState<string | null>(null);
+  const [selectedSections, setSelectedSections] = useState<Set<string>>(
+    () => new Set(["netWorth", "detail", "cashFlow"])
+  );
 
   const today = new Date();
   const dateLabel = formatDateLong(today);
-  const ownerLabel = ownerFilter ?? "Full Household";
+  const ownerLabel = scope ?? "Full Household";
 
   // Preview counts (filtered)
-  const filteredAssets = filterByOwner(assets, ownerFilter);
-  const filteredDebts = filterByOwner(debts, ownerFilter);
-  const filteredIncomes = filterByOwner(incomes, ownerFilter).filter((i) => i.isActive);
-  const filteredExpenses = filterByOwner(expenses, ownerFilter);
-  const filteredRetirement = filterByOwner(retirementAccounts, ownerFilter);
+  const filteredAssets = filterByOwner(assets, scope);
+  const filteredDebts = filterByOwner(debts, scope);
+  const filteredIncomes = filterByOwner(incomes, scope).filter((i) => i.isActive);
+  const filteredExpenses = filterByOwner(expenses, scope);
+  const filteredRetirement = filterByOwner(retirementAccounts, scope);
 
   const retirementTotal = filteredRetirement.reduce((s, a) => s + a.balance, 0);
   const assetsTotal = totalAssets(filteredAssets) + retirementTotal;
@@ -828,14 +833,23 @@ export default function ExportPage() {
     try {
       const data = buildReportData(
         householdName ?? "My Household",
-        ownerFilter,
+        scope,
         incomes,
         expenses,
         assets,
         debts,
         retirementAccounts
       );
-      const html = generateReportHTML(data);
+      let html = generateReportHTML(data);
+      if (!selectedSections.has("netWorth")) {
+        html = html.replace(/<!-- Section 1: Net Worth Summary -->[\s\S]*?(?=<!-- Section 2:|<div class="report-footer")/, "");
+      }
+      if (!selectedSections.has("detail")) {
+        html = html.replace(/<!-- Section 2: Asset & Debt Detail -->[\s\S]*?(?=<!-- Section 3:|<div class="report-footer")/, "");
+      }
+      if (!selectedSections.has("cashFlow")) {
+        html = html.replace(/<!-- Section 3: Income & Cash Flow -->[\s\S]*?(?=<div class="report-footer")/, "");
+      }
       const win = window.open("", "_blank");
       if (!win) {
         alert("Pop-up blocked. Please allow pop-ups for this site and try again.");
@@ -852,6 +866,7 @@ export default function ExportPage() {
 
   const sections = [
     {
+      key: "netWorth",
       icon: BarChart3,
       title: "Net Worth Summary",
       items: [
@@ -865,6 +880,7 @@ export default function ExportPage() {
       ].filter(Boolean) as string[],
     },
     {
+      key: "detail",
       icon: DollarSign,
       title: "Asset & Debt Detail",
       items: [
@@ -876,6 +892,7 @@ export default function ExportPage() {
       ].filter(Boolean) as string[],
     },
     {
+      key: "cashFlow",
       icon: TrendingUp,
       title: "Income & Cash Flow",
       items: [
@@ -901,12 +918,12 @@ export default function ExportPage() {
         </p>
       </div>
 
-      {/* Report info card */}
+      {/* Report config card */}
       <div
         className="rounded-xl border p-5"
         style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
       >
-        <div className="flex items-start justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
             <span
               className="flex items-center justify-center w-10 h-10 rounded-lg flex-shrink-0"
@@ -915,76 +932,120 @@ export default function ExportPage() {
               <FileText size={18} style={{ color: "var(--accent-blue)" }} />
             </span>
             <div>
-              <p
-                className="font-semibold text-sm"
-                style={{ color: "var(--text-primary)" }}
-              >
+              <p className="font-semibold text-sm" style={{ color: "var(--text-primary)" }}>
                 {householdName ?? "My Household"}
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Scope: {ownerLabel}
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                As of {dateLabel}
-              </p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>As of {dateLabel}</p>
             </div>
           </div>
 
-          <button
-            onClick={handleGeneratePDF}
-            disabled={generating}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex-shrink-0"
-            style={{
-              background: "var(--accent-blue)",
-              color: "#fff",
-              opacity: generating ? 0.7 : 1,
-              cursor: generating ? "not-allowed" : "pointer",
-            }}
-          >
-            <Download size={15} />
-            {generating ? "Preparing…" : "Generate PDF"}
-          </button>
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Scope</label>
+              <select
+                value={scope ?? ""}
+                onChange={(e) => setScope(e.target.value || null)}
+                className="rounded-md px-3 py-1.5 text-sm"
+                style={{
+                  background: "var(--bg-elevated)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border)",
+                  outline: "none",
+                }}
+              >
+                <option value="">Full Household</option>
+                {householdMembers.map((m) => (
+                  <option key={m.id} value={m.name}>{m.name}</option>
+                ))}
+                <option value="Joint">Joint</option>
+              </select>
+            </div>
+
+            <button
+              onClick={handleGeneratePDF}
+              disabled={generating || selectedSections.size === 0}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold flex-shrink-0"
+              style={{
+                background: "var(--accent-blue)",
+                color: "#fff",
+                opacity: generating || selectedSections.size === 0 ? 0.5 : 1,
+                cursor: generating || selectedSections.size === 0 ? "not-allowed" : "pointer",
+              }}
+            >
+              <Download size={15} />
+              {generating
+                ? "Preparing…"
+                : selectedSections.size === 0
+                ? "Select sections"
+                : `Generate PDF${selectedSections.size < 3 ? ` (${selectedSections.size})` : ""}`}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Section previews */}
+      {/* Section previews — click to include/exclude */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {sections.map(({ icon: Icon, title, items }) => (
-          <div
-            key={title}
-            className="rounded-xl border p-5"
-            style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
-          >
-            <div className="flex items-center gap-2 mb-3">
-              <Icon size={15} style={{ color: "var(--accent-blue)" }} />
-              <span
-                className="text-sm font-semibold"
-                style={{ color: "var(--text-primary)" }}
-              >
-                {title}
-              </span>
+        {sections.map(({ key, icon: Icon, title, items }) => {
+          const checked = selectedSections.has(key);
+          return (
+            <div
+              key={key}
+              onClick={() =>
+                setSelectedSections((prev) => {
+                  const next = new Set(prev);
+                  if (next.has(key)) next.delete(key); else next.add(key);
+                  return next;
+                })
+              }
+              className="rounded-xl border p-5 cursor-pointer select-none"
+              style={{
+                background: "var(--bg-surface)",
+                borderColor: checked ? "var(--accent-blue)" : "var(--border)",
+                opacity: checked ? 1 : 0.5,
+                transition: "border-color 0.15s, opacity 0.15s",
+              }}
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    setSelectedSections((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(key)) next.delete(key); else next.add(key);
+                      return next;
+                    })
+                  }
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ accentColor: "var(--accent-blue)", flexShrink: 0 }}
+                />
+                <Icon size={15} style={{ color: checked ? "var(--accent-blue)" : "var(--text-muted)" }} />
+                <span className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>
+                  {title}
+                </span>
+              </div>
+              <ul className="space-y-1.5">
+                {items.map((item) => (
+                  <li key={item} className="flex items-start gap-2">
+                    <span
+                      className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0"
+                      style={{ background: "var(--text-muted)" }}
+                    />
+                    <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
+                      {item}
+                    </span>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <ul className="space-y-1.5">
-              {items.map((item) => (
-                <li key={item} className="flex items-start gap-2">
-                  <span
-                    className="mt-1.5 w-1 h-1 rounded-full flex-shrink-0"
-                    style={{ background: "var(--text-muted)" }}
-                  />
-                  <span className="text-xs" style={{ color: "var(--text-secondary)" }}>
-                    {item}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Tip */}
       <p className="text-xs" style={{ color: "var(--text-muted)" }}>
         Tip: To save as PDF, choose &ldquo;Save as PDF&rdquo; as the destination in the print dialog.
-        Use the person filter in the sidebar to scope the report to a specific household member.
+        Click any section card to include or exclude it from the report.
       </p>
     </div>
   );
