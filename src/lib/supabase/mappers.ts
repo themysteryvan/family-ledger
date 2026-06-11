@@ -54,7 +54,7 @@ export const toIncome = (r: IncomeRow): Income => ({
   id: r.id, name: r.name, amount: r.amount,
   frequency: r.frequency as Income["frequency"],
   category: r.type as Income["category"],
-  owner: r.owner,
+  owner: r.owner ?? "",
   isActive: r.guaranteed,
   startDate: r.start_date ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
