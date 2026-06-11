@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Receipt, Plus, Pencil, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Receipt, Plus, Pencil, Trash2, Upload } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -96,6 +97,13 @@ export default function ExpensesPage() {
         </div>
         <div className="flex items-center gap-3 flex-wrap">
           <FilterBar />
+          <Link
+            href="/import"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium"
+            style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}
+          >
+            <Upload size={14} /> Import
+          </Link>
           <button onClick={openAdd} className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium" style={{ background: "var(--accent-blue)", color: "#fff" }}>
             <Plus size={15} /> Add Expense
           </button>

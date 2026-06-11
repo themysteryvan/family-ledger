@@ -18,6 +18,7 @@ import {
   Wallet,
   Sparkles,
   PiggyBank,
+  Building2,
   LogIn,
   LogOut,
   X,
@@ -43,6 +44,7 @@ const dashboardSubItems = [
   { label: "Budget", href: "/budget", icon: Target },
   { label: "Debts", href: "/debts", icon: CreditCard },
   { label: "Retirement", href: "/retirement", icon: PiggyBank },
+  { label: "Assets", href: "/assets", icon: Building2 },
 ];
 
 const dashboardSubPaths = dashboardSubItems.map((i) => i.href);
