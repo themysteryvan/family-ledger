@@ -75,7 +75,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
 
-          {loggedIn === false && (
+          {loggedIn !== true && (
             <Link
               href="/login"
               className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
@@ -88,7 +88,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Desktop Sign In bar — only when not logged in */}
-        {loggedIn === false && (
+        {loggedIn !== true && (
           <div
             className="hidden md:flex justify-end px-6 py-3 border-b flex-shrink-0"
             style={{ background: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}

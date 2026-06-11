@@ -41,18 +41,21 @@ export default function LoginPage() {
     } else if (mode === "signup") {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) {
+        console.error("Signup error:", error);
         setError(error.message);
       } else {
-        setSuccessMsg("Check your email to confirm your account, then sign in.");
-        switchMode("signin");
+        // Use setMode directly (not switchMode) so the success message isn't cleared
+        setMode("signin");
+        setSuccessMsg("Account created! Check your email to confirm, then sign in.");
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
+        console.error("Sign in error:", error);
         setError(error.message);
       } else {
+        // router.refresh() after router.push() can cancel the navigation in App Router
         router.push("/dashboard");
-        router.refresh();
       }
     }
 
