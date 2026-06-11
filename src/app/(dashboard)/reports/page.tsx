@@ -862,7 +862,7 @@ function ReportsContent() {
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className="px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors"
+            className="w-36 py-2 rounded-t-lg text-sm font-semibold transition-colors text-center whitespace-nowrap"
             style={
               tab === t.key
                 ? {
