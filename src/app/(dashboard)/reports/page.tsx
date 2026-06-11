@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect } from "react";
 import {
   Download,
   FileText,
@@ -690,9 +689,7 @@ const TAB_DESCRIPTIONS: Record<Tab, string> = {
 // ── Inner component ────────────────────────────────────────────────────────────
 
 function ReportsContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const tab = (searchParams.get("tab") ?? "report") as Tab;
+  const [tab, setTab] = useState<Tab>("report");
 
   // State
   const [mounted, setMounted] = useState(false);
@@ -864,24 +861,28 @@ function ReportsContent() {
         {tabs.map((t) => (
           <button
             key={t.key}
-            onClick={() => router.push(`/reports?tab=${t.key}`)}
+            onClick={() => setTab(t.key)}
             className="px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors"
             style={
               tab === t.key
-                ? { background: "var(--accent-blue)", color: "#fff" }
+                ? {
+                    background: "var(--accent-blue)",
+                    color: "#fff",
+                    border: "1px solid var(--accent-blue)",
+                  }
                 : {
                     background: "var(--bg-elevated)",
-                    color: "var(--text-secondary)",
+                    color: "var(--text-primary)",
                     border: "1px solid var(--border)",
                   }
             }
             onMouseEnter={(e) => {
               if (tab !== t.key)
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+                e.currentTarget.style.background = "var(--bg-surface)";
             }}
             onMouseLeave={(e) => {
               if (tab !== t.key)
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+                e.currentTarget.style.background = "var(--bg-elevated)";
             }}
           >
             {t.label}
@@ -1370,9 +1371,5 @@ function ReportsContent() {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ReportsPage() {
-  return (
-    <Suspense>
-      <ReportsContent />
-    </Suspense>
-  );
+  return <ReportsContent />;
 }
