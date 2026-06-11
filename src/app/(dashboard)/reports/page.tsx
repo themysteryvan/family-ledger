@@ -858,17 +858,30 @@ function ReportsContent() {
 
       {/* Tab bar */}
       <div
-        className="flex rounded-lg p-1"
-        style={{ background: "var(--bg-elevated)" }}
+        className="flex gap-1 pb-px border-b"
+        style={{ borderColor: "var(--border)" }}
       >
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => router.push(`/reports?tab=${t.key}`)}
-            className="flex-1 py-1.5 rounded-md text-sm font-medium transition-colors"
-            style={{
-              background: tab === t.key ? "var(--bg-surface)" : "transparent",
-              color: tab === t.key ? "var(--text-primary)" : "var(--text-muted)",
+            className="px-4 py-2 rounded-t-lg text-sm font-semibold transition-colors"
+            style={
+              tab === t.key
+                ? { background: "var(--accent-blue)", color: "#fff" }
+                : {
+                    background: "var(--bg-elevated)",
+                    color: "var(--text-secondary)",
+                    border: "1px solid var(--border)",
+                  }
+            }
+            onMouseEnter={(e) => {
+              if (tab !== t.key)
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+            }}
+            onMouseLeave={(e) => {
+              if (tab !== t.key)
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
             }}
           >
             {t.label}
