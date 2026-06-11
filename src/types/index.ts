@@ -51,6 +51,7 @@ export interface Expense {
   owner?: string;
   dataSource?: string;
   notes?: string;
+  documentUrl?: string;
 }
 
 export interface Asset {
@@ -71,6 +72,7 @@ export interface Asset {
   purchaseDate?: string;
   dataSource?: string;
   notes?: string;
+  documentUrl?: string;
 }
 
 export interface Debt {
@@ -93,6 +95,7 @@ export interface Debt {
   dueDate?: string;
   dataSource?: string;
   notes?: string;
+  documentUrl?: string;
 }
 
 export interface ProjectExpense {

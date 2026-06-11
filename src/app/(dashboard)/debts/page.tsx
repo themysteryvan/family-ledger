@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, Plus, Pencil, Trash2 } from "lucide-react";
+import { CreditCard, Plus, Pencil, Trash2, Paperclip } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -304,6 +304,11 @@ export default function DebtsPage() {
                     <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: "var(--bg-elevated)", color: categoryColors[debt.category] }}>
                       {categoryLabels[debt.category]}
                     </span>
+                    {debt.documentUrl && (
+                      <a href={debt.documentUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
+                        <Paperclip size={13} />
+                      </a>
+                    )}
                     <button onClick={() => openEdit(debt)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                       <Pencil size={13} />
                     </button>

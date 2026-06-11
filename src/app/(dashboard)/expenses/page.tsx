@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Receipt, Plus, Pencil, Trash2, Upload } from "lucide-react";
+import { Receipt, Plus, Pencil, Trash2, Upload, Paperclip } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -192,6 +192,11 @@ export default function ExpensesPage() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
+                        {exp.documentUrl && (
+                          <a href={exp.documentUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
+                            <Paperclip size={14} />
+                          </a>
+                        )}
                         <button onClick={() => openEdit(exp)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                           <Pencil size={14} />
                         </button>

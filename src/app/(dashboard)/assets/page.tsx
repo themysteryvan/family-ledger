@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, Plus, Pencil, Trash2 } from "lucide-react";
+import { Building2, Plus, Pencil, Trash2, Paperclip } from "lucide-react";
 import {
   PieChart,
   Pie,
@@ -234,6 +234,11 @@ export default function AssetsPage() {
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
+                        {asset.documentUrl && (
+                          <a href={asset.documentUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
+                            <Paperclip size={14} />
+                          </a>
+                        )}
                         <button onClick={() => openEdit(asset)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                           <Pencil size={14} />
                         </button>

@@ -11,16 +11,19 @@ export interface ExpenseRow {
   id: string; household_id: string; name: string; amount: number;
   frequency: string; category: string; fixed: boolean;
   essential: boolean; owner: string | null; data_source: string | null; notes: string | null;
+  document_url: string | null;
 }
 export interface AssetRow {
   id: string; household_id: string; name: string; type: string;
   value: number; owner: string | null; institution: string | null;
   liquidity: string | null; data_source: string | null; notes: string | null;
+  document_url: string | null;
 }
 export interface DebtRow {
   id: string; household_id: string; name: string; type: string;
   original_balance: number; current_balance: number; interest_rate: number;
   minimum_payment: number; owner: string | null; data_source: string | null; notes: string | null;
+  document_url: string | null;
 }
 export interface RetirementAccountRow {
   id: string; household_id: string; name: string; type: string;
@@ -66,6 +69,7 @@ export const toExpense = (r: ExpenseRow): Expense => ({
   owner: r.owner ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
+  documentUrl: r.document_url ?? undefined,
 });
 
 export const toAsset = (r: AssetRow): Asset => ({
@@ -74,6 +78,7 @@ export const toAsset = (r: AssetRow): Asset => ({
   owner: r.owner ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
+  documentUrl: r.document_url ?? undefined,
 });
 
 export const toDebt = (r: DebtRow): Debt => ({
@@ -86,6 +91,7 @@ export const toDebt = (r: DebtRow): Debt => ({
   owner: r.owner ?? undefined,
   dataSource: r.data_source ?? "Manual Entry",
   notes: r.notes ?? undefined,
+  documentUrl: r.document_url ?? undefined,
 });
 
 export const toRetirementAccount = (r: RetirementAccountRow): RetirementAccount => ({
@@ -140,6 +146,7 @@ export const fromExpense = (item: Omit<Expense, "id">, householdId: string) => (
   owner: item.owner ?? null,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
+  document_url: item.documentUrl ?? null,
 });
 
 function assetLiquidity(category: string): string {
@@ -157,6 +164,7 @@ export const fromAsset = (item: Omit<Asset, "id">, householdId: string) => ({
   liquidity: assetLiquidity(item.category),
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
+  document_url: item.documentUrl ?? null,
 });
 
 export const fromDebt = (item: Omit<Debt, "id">, householdId: string) => ({
@@ -170,6 +178,7 @@ export const fromDebt = (item: Omit<Debt, "id">, householdId: string) => ({
   owner: item.owner ?? null,
   data_source: item.dataSource ?? null,
   notes: item.notes ?? null,
+  document_url: item.documentUrl ?? null,
 });
 
 export const fromRetirementAccount = (item: Omit<RetirementAccount, "id">, householdId: string) => ({

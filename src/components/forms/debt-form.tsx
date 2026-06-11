@@ -1,9 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { Paperclip } from "lucide-react";
 import type { Debt } from "@/types";
 import { Field, Input, Select, Textarea, FormActions } from "@/components/ui/form-field";
 import { OwnerSelect } from "@/components/ui/owner-select";
+import { uploadDocument } from "@/lib/supabase/storage";
 
 interface Props {
   initial?: Debt;
@@ -34,11 +36,22 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
     notes: initial?.notes ?? "",
   });
 
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) =>
     setF((prev) => ({ ...prev, [k]: v }));
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    let documentUrl = initial?.documentUrl;
+    if (pendingFile) {
+      setUploading(true);
+      try { documentUrl = await uploadDocument(pendingFile, "debts"); }
+      catch (err) { console.error("Upload failed:", err); }
+      finally { setUploading(false); }
+    }
     const data: Omit<Debt, "id"> = {
       name: f.name.trim(),
       balance: parseFloat(f.balance) || 0,
@@ -49,6 +62,7 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
       owner: f.owner.trim() || undefined,
       lender: f.lender.trim() || undefined,
       notes: f.notes.trim() || undefined,
+      documentUrl,
     };
     onSave(initial ? { ...data, id: initial.id } : data);
   }
@@ -147,7 +161,36 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
         />
       </Field>
 
-      <FormActions onClose={onClose} submitLabel={initial ? "Save changes" : "Add debt"} />
+      <div>
+        <input ref={fileRef} type="file" accept=".pdf,.jpg,.jpeg,.png" className="hidden"
+          onChange={(e) => setPendingFile(e.target.files?.[0] ?? null)} />
+        {pendingFile ? (
+          <div className="flex items-center gap-2">
+            <Paperclip size={13} style={{ color: "var(--text-muted)" }} />
+            <span className="text-sm truncate max-w-[240px]" style={{ color: "var(--text-secondary)" }}>{pendingFile.name}</span>
+            <button type="button" onClick={() => { setPendingFile(null); if (fileRef.current) fileRef.current.value = ""; }}
+              className="text-xs ml-1" style={{ color: "var(--text-muted)" }}>Remove</button>
+          </div>
+        ) : initial?.documentUrl ? (
+          <div className="flex items-center gap-3">
+            <a href={initial.documentUrl} target="_blank" rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-sm" style={{ color: "var(--accent-blue)" }}>
+              <Paperclip size={13} /> View attachment
+            </a>
+            <button type="button" onClick={() => fileRef.current?.click()}
+              className="text-xs" style={{ color: "var(--text-muted)" }}>Replace</button>
+          </div>
+        ) : (
+          <button type="button" onClick={() => fileRef.current?.click()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm"
+            style={{ background: "var(--bg-elevated)", color: "var(--text-secondary)", border: "1px solid var(--border)" }}>
+            <Paperclip size={13} /> Attach document
+          </button>
+        )}
+        {uploading && <span className="text-xs mt-1 block" style={{ color: "var(--text-muted)" }}>Uploading…</span>}
+      </div>
+
+      <FormActions onClose={onClose} submitLabel={uploading ? "Saving…" : initial ? "Save changes" : "Add debt"} />
     </form>
   );
 }
