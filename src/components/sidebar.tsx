@@ -107,10 +107,20 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               )}
             </>
           ) : (
-            <>
-              <p className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>Demo Mode</p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Sign in to save data</p>
-            </>
+            <div className="space-y-2.5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--accent-blue)" }}>Demo Mode</p>
+                <p className="text-xs font-semibold mt-1 leading-snug" style={{ color: "var(--text-primary)" }}>Know exactly where you stand.</p>
+                <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>Free to get started.</p>
+              </div>
+              <Link
+                href="/login"
+                className="flex items-center justify-center w-full px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+                style={{ background: "var(--accent-blue)", color: "#fff" }}
+              >
+                Create Free Account
+              </Link>
+            </div>
           )}
         </div>
       </div>
