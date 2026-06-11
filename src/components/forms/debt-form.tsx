@@ -38,6 +38,7 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
 
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const set = <K extends keyof typeof f>(k: K, v: (typeof f)[K]) =>
@@ -48,9 +49,14 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
     let documentUrl = initial?.documentUrl;
     if (pendingFile) {
       setUploading(true);
+      setUploadError(null);
       try { documentUrl = await uploadDocument(pendingFile, "debts"); }
-      catch (err) { console.error("Upload failed:", err); }
-      finally { setUploading(false); }
+      catch (err) {
+        setUploadError(err instanceof Error ? err.message : "Upload failed — check your connection and try again.");
+        setUploading(false);
+        return;
+      }
+      setUploading(false);
     }
     const data: Omit<Debt, "id"> = {
       name: f.name.trim(),
@@ -188,9 +194,10 @@ export function DebtForm({ initial, onSave, onClose }: Props) {
           </button>
         )}
         {uploading && <span className="text-xs mt-1 block" style={{ color: "var(--text-muted)" }}>Uploading…</span>}
+        {uploadError && <p className="text-xs mt-1" style={{ color: "var(--accent-red)" }}>{uploadError}</p>}
       </div>
 
-      <FormActions onClose={onClose} submitLabel={uploading ? "Saving…" : initial ? "Save changes" : "Add debt"} />
+      <FormActions onClose={onClose} submitLabel={uploading ? "Uploading…" : initial ? "Save changes" : "Add debt"} />
     </form>
   );
 }

@@ -10,11 +10,11 @@ export async function uploadDocument(
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const path = `${user.id}/${section}/${Date.now()}_${file.name}`;
+  const path = `${user.id}/${section}/${file.name}`;
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(path, file, { upsert: false });
+    .upload(path, file, { upsert: true });
 
   if (error) throw error;
 
