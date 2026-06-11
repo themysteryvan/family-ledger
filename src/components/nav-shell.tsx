@@ -104,29 +104,6 @@ export function NavShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
 
-        {loggedIn !== true && (
-          <div
-            className="flex-shrink-0 px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row sm:items-center gap-3"
-            style={{ background: "var(--bg-elevated)", borderColor: "var(--border-subtle)" }}
-          >
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold leading-snug" style={{ color: "var(--text-primary)" }}>
-                Know exactly where you stand.
-              </p>
-              <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-                Track your assets, debts, income, and expenses in one place. Free to get started.
-              </p>
-            </div>
-            <Link
-              href="/login"
-              className="flex-shrink-0 inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-              style={{ background: "var(--accent-blue)", color: "#fff" }}
-            >
-              Create Free Account
-            </Link>
-          </div>
-        )}
-
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 w-full">
           {children}
         </div>
