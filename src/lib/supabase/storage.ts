@@ -25,6 +25,11 @@ export async function uploadDocument(
 export async function openDocument(pathOrUrl: string): Promise<void> {
   const supabase = createClient();
 
+  // Load the session into this client instance before making storage calls.
+  // createBrowserClient starts with no session; getUser() forces it to load
+  // from cookies, which is required for createSignedUrl to receive the auth token.
+  await supabase.auth.getUser();
+
   // Handle legacy records that stored the full public URL
   const path = pathOrUrl.startsWith("http")
     ? new URL(pathOrUrl).pathname.replace(/^.*\/financial-documents\//, "")
