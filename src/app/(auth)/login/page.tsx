@@ -44,9 +44,7 @@ export default function LoginPage() {
         console.error("Signup error:", error);
         setError(error.message);
       } else {
-        // Use setMode directly (not switchMode) so the success message isn't cleared
-        setMode("signin");
-        setSuccessMsg("Account created! Check your email to confirm, then sign in.");
+        router.push("/dashboard");
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
