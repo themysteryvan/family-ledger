@@ -8,18 +8,14 @@ import {
   TrendingUp,
   Receipt,
   Target,
-  Building2,
   CreditCard,
   BarChart3,
   FolderOpen,
   LineChart,
   FileText,
-  HeartPulse,
   Settings,
   Home,
   Wallet,
-  Upload,
-  Download,
   Sparkles,
   PiggyBank,
   LogIn,
@@ -30,31 +26,36 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { useFinanceStore } from "@/store/finance-store";
 
-const navItems = [
+const topNavItems = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Household", href: "/household", icon: Home },
-  { label: "Advisor", href: "/advisor", icon: Sparkles },
-  { label: "Income", href: "/income", icon: TrendingUp },
-  { label: "Expenses", href: "/expenses", icon: Receipt },
-  { label: "Budget", href: "/budget", icon: Target },
-  { label: "Assets", href: "/assets", icon: Building2 },
-  { label: "Debts", href: "/debts", icon: CreditCard },
-  { label: "Retirement", href: "/retirement", icon: PiggyBank },
+  { label: "AI Analysis", href: "/advisor", icon: Sparkles },
   { label: "Net Worth", href: "/net-worth", icon: BarChart3 },
   { label: "Forecasts", href: "/forecasts", icon: LineChart },
   { label: "Projects", href: "/projects", icon: FolderOpen },
-  { label: "Health Score", href: "/health-score", icon: HeartPulse },
   { label: "Reports", href: "/reports", icon: FileText },
-  { label: "Import", href: "/import", icon: Upload },
-  { label: "Export", href: "/export", icon: Download },
   { label: "Settings", href: "/settings", icon: Settings },
 ];
+
+const dashboardSubItems = [
+  { label: "Income", href: "/income", icon: TrendingUp },
+  { label: "Expenses", href: "/expenses", icon: Receipt },
+  { label: "Budget", href: "/budget", icon: Target },
+  { label: "Debts", href: "/debts", icon: CreditCard },
+  { label: "Retirement", href: "/retirement", icon: PiggyBank },
+];
+
+const dashboardSubPaths = dashboardSubItems.map((i) => i.href);
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const householdName = useFinanceStore((s) => s.householdName);
+
+  const isDashboardSection =
+    pathname === "/dashboard" ||
+    dashboardSubPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   useEffect(() => {
     const supabase = createClient();
@@ -121,8 +122,11 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       {/* Nav */}
       <nav className="flex-1 px-3 overflow-y-auto">
         <ul className="space-y-0.5">
-          {navItems.map(({ label, href, icon: Icon }) => {
-            const active = pathname === href || pathname.startsWith(href + "/");
+          {topNavItems.map(({ label, href, icon: Icon }) => {
+            const isDash = href === "/dashboard";
+            const active = isDash
+              ? isDashboardSection
+              : pathname === href || pathname.startsWith(href + "/");
             return (
               <li key={href}>
                 <Link
@@ -134,9 +138,47 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                   )}
                   style={active ? { background: "var(--bg-elevated)", color: "var(--text-primary)" } : {}}
                 >
-                  <Icon size={16} style={{ color: active ? "var(--accent-blue)" : "var(--text-secondary)", flexShrink: 0 }} />
+                  <Icon
+                    size={16}
+                    style={{ color: active ? "var(--accent-blue)" : "var(--text-secondary)", flexShrink: 0 }}
+                  />
                   {label}
                 </Link>
+
+                {/* Dashboard sub-nav — shown when on dashboard or any sub-page */}
+                {isDash && isDashboardSection && (
+                  <div
+                    className="ml-4 pl-3 mt-0.5 mb-1 space-y-0.5 border-l"
+                    style={{ borderColor: "var(--border-subtle)" }}
+                  >
+                    {dashboardSubItems.map(({ label: subLabel, href: subHref, icon: SubIcon }) => {
+                      const subActive = pathname === subHref || pathname.startsWith(subHref + "/");
+                      return (
+                        <Link
+                          key={subHref}
+                          href={subHref}
+                          onClick={onClose}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                            subActive
+                              ? "text-[var(--text-primary)]"
+                              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                          )}
+                          style={subActive ? { background: "var(--bg-elevated)" } : {}}
+                        >
+                          <SubIcon
+                            size={13}
+                            style={{
+                              color: subActive ? "var(--accent-blue)" : "var(--text-secondary)",
+                              flexShrink: 0,
+                            }}
+                          />
+                          {subLabel}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                )}
               </li>
             );
           })}
