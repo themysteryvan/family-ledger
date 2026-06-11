@@ -47,17 +47,11 @@ const dashboardSubItems = [
   { label: "Assets", href: "/assets", icon: Building2 },
 ];
 
-const dashboardSubPaths = dashboardSubItems.map((i) => i.href);
-
 export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const householdName = useFinanceStore((s) => s.householdName);
-
-  const isDashboardSection =
-    pathname === "/dashboard" ||
-    dashboardSubPaths.some((p) => pathname === p || pathname.startsWith(p + "/"));
 
   useEffect(() => {
     const supabase = createClient();
@@ -126,9 +120,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         <ul className="space-y-0.5">
           {topNavItems.map(({ label, href, icon: Icon }) => {
             const isDash = href === "/dashboard";
-            const active = isDash
-              ? isDashboardSection
-              : pathname === href || pathname.startsWith(href + "/");
+            const active = pathname === href || (!isDash && pathname.startsWith(href + "/"));
             return (
               <li key={href}>
                 <Link
@@ -147,8 +139,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                   {label}
                 </Link>
 
-                {/* Dashboard sub-nav — shown when on dashboard or any sub-page */}
-                {isDash && isDashboardSection && (
+                {isDash && (
                   <div
                     className="ml-4 pl-3 mt-0.5 mb-1 space-y-0.5 border-l"
                     style={{ borderColor: "var(--border-subtle)" }}
