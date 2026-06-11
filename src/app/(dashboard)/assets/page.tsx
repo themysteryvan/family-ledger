@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Building2, Plus, Pencil, Trash2, Paperclip } from "lucide-react";
+import { openDocument } from "@/lib/supabase/storage";
 import {
   PieChart,
   Pie,
@@ -235,9 +236,9 @@ export default function AssetsPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                         {asset.documentUrl && (
-                          <a href={asset.documentUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
+                          <button onClick={() => openDocument(asset.documentUrl!).catch(console.error)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                             <Paperclip size={14} />
-                          </a>
+                          </button>
                         )}
                         <button onClick={() => openEdit(asset)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                           <Pencil size={14} />

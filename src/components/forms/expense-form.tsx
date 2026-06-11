@@ -6,7 +6,7 @@ import type { Expense, FrequencyType } from "@/types";
 import { Field, Input, Select, Textarea, Checkbox, FormActions } from "@/components/ui/form-field";
 import { OwnerSelect } from "@/components/ui/owner-select";
 import { CategorySelect } from "@/components/ui/category-select";
-import { uploadDocument } from "@/lib/supabase/storage";
+import { uploadDocument, openDocument } from "@/lib/supabase/storage";
 
 interface Props {
   initial?: Expense;
@@ -166,10 +166,10 @@ export function ExpenseForm({ initial, onSave, onClose }: Props) {
           </div>
         ) : initial?.documentUrl ? (
           <div className="flex items-center gap-3">
-            <a href={initial.documentUrl} target="_blank" rel="noopener noreferrer"
+            <button type="button" onClick={() => openDocument(initial.documentUrl!).catch(console.error)}
               className="flex items-center gap-1.5 text-sm" style={{ color: "var(--accent-blue)" }}>
               <Paperclip size={13} /> View attachment
-            </a>
+            </button>
             <button type="button" onClick={() => fileRef.current?.click()}
               className="text-xs" style={{ color: "var(--text-muted)" }}>Replace</button>
           </div>

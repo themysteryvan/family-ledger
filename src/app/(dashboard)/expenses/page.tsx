@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Receipt, Plus, Pencil, Trash2, Upload, Paperclip } from "lucide-react";
+import { openDocument } from "@/lib/supabase/storage";
 import {
   BarChart,
   Bar,
@@ -193,9 +194,9 @@ export default function ExpensesPage() {
                     ) : (
                       <div className="flex items-center gap-2">
                         {exp.documentUrl && (
-                          <a href={exp.documentUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
+                          <button onClick={() => openDocument(exp.documentUrl!).catch(console.error)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                             <Paperclip size={14} />
-                          </a>
+                          </button>
                         )}
                         <button onClick={() => openEdit(exp)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                           <Pencil size={14} />

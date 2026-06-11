@@ -18,6 +18,22 @@ export async function uploadDocument(
 
   if (error) throw error;
 
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return data.publicUrl;
+  // Store the path, not a public URL — access via signed URLs
+  return path;
+}
+
+export async function openDocument(pathOrUrl: string): Promise<void> {
+  const supabase = createClient();
+
+  // Handle legacy records that stored the full public URL
+  const path = pathOrUrl.startsWith("http")
+    ? new URL(pathOrUrl).pathname.replace(/^.*\/financial-documents\//, "")
+    : pathOrUrl;
+
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 60);
+
+  if (error || !data) throw error ?? new Error("Failed to create signed URL");
+  window.open(data.signedUrl, "_blank", "noopener,noreferrer");
 }

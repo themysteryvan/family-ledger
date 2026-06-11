@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CreditCard, Plus, Pencil, Trash2, Paperclip } from "lucide-react";
+import { openDocument } from "@/lib/supabase/storage";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
@@ -305,9 +306,9 @@ export default function DebtsPage() {
                       {categoryLabels[debt.category]}
                     </span>
                     {debt.documentUrl && (
-                      <a href={debt.documentUrl} target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
+                      <button onClick={() => openDocument(debt.documentUrl!).catch(console.error)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                         <Paperclip size={13} />
-                      </a>
+                      </button>
                     )}
                     <button onClick={() => openEdit(debt)} className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-elevated)]" style={{ color: "var(--text-muted)" }}>
                       <Pencil size={13} />
