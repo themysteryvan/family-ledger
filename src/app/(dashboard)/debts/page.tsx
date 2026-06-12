@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CreditCard, Plus, Pencil, Trash2, Paperclip } from "lucide-react";
 import { openDocument } from "@/lib/supabase/storage";
 import {
@@ -89,6 +89,69 @@ function monthToYear(months: number): number {
   const d = new Date();
   d.setMonth(d.getMonth() + months);
   return d.getFullYear();
+}
+
+function MinPaymentsCard({ debts, total }: { debts: Debt[]; total: number }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleOutside);
+    return () => document.removeEventListener("mousedown", handleOutside);
+  }, [open]);
+
+  const sorted = [...debts].sort((a, b) => b.minimumPayment - a.minimumPayment);
+
+  return (
+    <div
+      ref={ref}
+      className="relative"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+      onClick={() => setOpen((v) => !v)}
+    >
+      <div
+        className="rounded-xl border p-5 flex flex-col gap-3 cursor-pointer select-none"
+        style={{ background: "var(--bg-surface)", borderColor: open ? "var(--accent-amber)" : "var(--border)", transition: "border-color 0.15s" }}
+      >
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Min. Payments</span>
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: "var(--accent-amber-dim)" }}>
+            <CreditCard size={16} style={{ color: "var(--accent-amber)" }} />
+          </span>
+        </div>
+        <div>
+          <p className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>{fmt(total)}</p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>per month</p>
+        </div>
+      </div>
+
+      {open && debts.length > 0 && (
+        <div
+          className="absolute left-0 right-0 z-20 mt-1.5 rounded-xl border py-1.5 shadow-xl"
+          style={{ background: "var(--bg-elevated)", borderColor: "var(--border)" }}
+        >
+          {sorted.map((d) => (
+            <div key={d.id} className="flex items-center justify-between px-4 py-1.5">
+              <span className="text-xs truncate mr-3" style={{ color: "var(--text-secondary)" }}>{d.name}</span>
+              <span className="text-xs font-medium flex-shrink-0" style={{ color: "var(--text-primary)" }}>{fmt(d.minimumPayment)}/mo</span>
+            </div>
+          ))}
+          <div
+            className="flex items-center justify-between px-4 py-1.5 mt-0.5 border-t"
+            style={{ borderColor: "var(--border-subtle)" }}
+          >
+            <span className="text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Total</span>
+            <span className="text-xs font-semibold" style={{ color: "var(--accent-amber)" }}>{fmt(total)}/mo</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function DebtsPage() {
@@ -183,7 +246,7 @@ export default function DebtsPage() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Total Debt" value={fmt(total, true)} icon={CreditCard} accent="red" />
-        <StatCard title="Min. Payments" value={fmt(totalMinPayments)} sub="per month" accent="amber" />
+        <MinPaymentsCard debts={debts} total={totalMinPayments} />
         <StatCard title="Avg. Interest Rate" value={fmtPct(avgRate)} sub="Weighted by balance" accent="purple" />
         <StatCard title="Accounts" value={String(debts.length)} sub="Active debts" accent="blue" />
       </div>
