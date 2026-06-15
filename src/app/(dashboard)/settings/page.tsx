@@ -8,7 +8,6 @@ import { createClient } from "@/lib/supabase/client";
 
 export default function SettingsPage() {
   const householdName = useFinanceStore((s) => s.householdName);
-  const isLoadedFromSupabase = useFinanceStore((s) => s.isLoadedFromSupabase);
   const updateHouseholdName = useFinanceStore((s) => s.updateHouseholdName);
   const [nameInput, setNameInput] = useState("");
   const [nameSaved, setNameSaved] = useState(false);
@@ -225,29 +224,6 @@ export default function SettingsPage() {
         </>
       )}
 
-      {/* Data status */}
-      <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
-        <CardTitle>Data</CardTitle>
-        <div className="mt-4 space-y-3">
-          {[
-            { label: "Supabase", status: isLoadedFromSupabase ? "Connected" : "Demo mode", ok: isLoadedFromSupabase },
-            { label: "Bank sync (Plaid)", status: "Not connected", ok: false },
-          ].map((item) => (
-            <div key={item.label} className="flex items-center justify-between p-3 rounded-lg" style={{ background: "var(--bg-elevated)" }}>
-              <span className="text-sm" style={{ color: "var(--text-secondary)" }}>{item.label}</span>
-              <span
-                className="text-xs px-2 py-0.5 rounded-full font-medium"
-                style={{
-                  background: item.ok ? "var(--accent-green-dim)" : "var(--bg-muted)",
-                  color: item.ok ? "var(--accent-green)" : "var(--text-muted)",
-                }}
-              >
-                {item.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
