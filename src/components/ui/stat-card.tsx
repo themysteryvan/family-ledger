@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
@@ -12,83 +13,42 @@ interface StatCardProps {
   trendLabel?: string;
   accent?: "blue" | "green" | "red" | "amber" | "purple";
   className?: string;
+  href?: string;
 }
 
 const accentMap = {
-  blue: {
-    icon: "var(--accent-blue)",
-    bg: "var(--accent-blue-dim)",
-    badge: "var(--accent-blue)",
-  },
-  green: {
-    icon: "var(--accent-green)",
-    bg: "var(--accent-green-dim)",
-    badge: "var(--accent-green)",
-  },
-  red: {
-    icon: "var(--accent-red)",
-    bg: "var(--accent-red-dim)",
-    badge: "var(--accent-red)",
-  },
-  amber: {
-    icon: "var(--accent-amber)",
-    bg: "var(--accent-amber-dim)",
-    badge: "var(--accent-amber)",
-  },
-  purple: {
-    icon: "var(--accent-purple)",
-    bg: "var(--accent-purple-dim)",
-    badge: "var(--accent-purple)",
-  },
+  blue: { icon: "var(--accent-blue)", bg: "var(--accent-blue-dim)", badge: "var(--accent-blue)" },
+  green: { icon: "var(--accent-green)", bg: "var(--accent-green-dim)", badge: "var(--accent-green)" },
+  red: { icon: "var(--accent-red)", bg: "var(--accent-red-dim)", badge: "var(--accent-red)" },
+  amber: { icon: "var(--accent-amber)", bg: "var(--accent-amber-dim)", badge: "var(--accent-amber)" },
+  purple: { icon: "var(--accent-purple)", bg: "var(--accent-purple-dim)", badge: "var(--accent-purple)" },
 };
 
-export function StatCard({
-  title,
-  value,
-  sub,
-  icon: Icon,
-  trend,
-  trendLabel,
-  accent = "blue",
-  className,
-}: StatCardProps) {
+export function StatCard({ title, value, sub, icon: Icon, trend, trendLabel, accent = "blue", className, href }: StatCardProps) {
   const colors = accentMap[accent];
-  const trendColor =
-    trend === "up"
-      ? "var(--accent-green)"
-      : trend === "down"
-        ? "var(--accent-red)"
-        : "var(--text-muted)";
+  const trendColor = trend === "up" ? "var(--accent-green)" : trend === "down" ? "var(--accent-red)" : "var(--text-muted)";
 
-  return (
+  const inner = (
     <div
-      className={cn("rounded-xl border p-5 flex flex-col gap-3", className)}
-      style={{
-        background: "var(--bg-surface)",
-        borderColor: "var(--border)",
-      }}
+      className={cn(
+        "rounded-xl border p-5 flex flex-col gap-3",
+        href && "cursor-pointer transition-colors hover:border-[var(--accent-blue)]",
+        className
+      )}
+      style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
     >
       <div className="flex items-center justify-between">
-        <span
-          className="text-sm font-medium"
-          style={{ color: "var(--text-secondary)" }}
-        >
+        <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
           {title}
         </span>
         {Icon && (
-          <span
-            className="flex items-center justify-center w-8 h-8 rounded-lg"
-            style={{ background: colors.bg }}
-          >
+          <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ background: colors.bg }}>
             <Icon size={16} style={{ color: colors.icon }} />
           </span>
         )}
       </div>
       <div>
-        <p
-          className="text-2xl font-semibold tracking-tight"
-          style={{ color: "var(--text-primary)" }}
-        >
+        <p className="text-2xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
           {value}
         </p>
         {sub && (
@@ -104,4 +64,6 @@ export function StatCard({
       )}
     </div>
   );
+
+  return href ? <Link href={href}>{inner}</Link> : inner;
 }

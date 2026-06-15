@@ -138,18 +138,18 @@ export default function DashboardPage() {
 
       {!isEmpty && <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Monthly Income" value={fmt(summary.monthlyIncome)} sub="All sources combined" icon={TrendingUp} accent="green" trend="up" trendLabel="~$173k annual" />
-        <StatCard title="Monthly Expenses" value={fmt(summary.monthlyExpenses)} sub="Fixed + variable" icon={TrendingDown} accent="red" trend="neutral" trendLabel="vs $12,500 budgeted" />
-        <StatCard title="Min. Debt Payments" value={fmt(debts.reduce((s, d) => s + (d.minimumPayment ?? 0), 0))} sub="Monthly obligations" icon={CreditCard} accent="amber" />
-        <StatCard title="Monthly Cash Flow" value={fmt(summary.monthlyCashFlow)} sub="After expenses & debt payments" icon={Wallet} accent={summary.monthlyCashFlow >= 0 ? "blue" : "red"} trend={summary.monthlyCashFlow >= 0 ? "up" : "down"} trendLabel={fmtPct(summary.savingsRate) + " savings rate"} />
+        <StatCard title="Monthly Income" value={fmt(summary.monthlyIncome)} sub="All sources combined" icon={TrendingUp} accent="green" trend="up" trendLabel="~$173k annual" href="/income" />
+        <StatCard title="Monthly Expenses" value={fmt(summary.monthlyExpenses)} sub="Fixed + variable" icon={TrendingDown} accent="red" trend="neutral" trendLabel="vs $12,500 budgeted" href="/expenses" />
+        <StatCard title="Min. Debt Payments" value={fmt(debts.reduce((s, d) => s + (d.minimumPayment ?? 0), 0))} sub="Monthly obligations" icon={CreditCard} accent="amber" href="/debts" />
+        <StatCard title="Monthly Cash Flow" value={fmt(summary.monthlyCashFlow)} sub="After expenses & debt payments" icon={Wallet} accent={summary.monthlyCashFlow >= 0 ? "blue" : "red"} trend={summary.monthlyCashFlow >= 0 ? "up" : "down"} trendLabel={fmtPct(summary.savingsRate) + " savings rate"} href="/budget" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Net Worth" value={fmt(summary.netWorth, true)} sub="Assets minus debts" icon={PiggyBank} accent="purple" trend="up" trendLabel="Growing" />
+        <StatCard title="Net Worth" value={fmt(summary.netWorth, true)} sub="Assets minus debts" icon={PiggyBank} accent="purple" trend="up" trendLabel="Growing" href="/net-worth" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+        <Link href="/net-worth" className="lg:col-span-2 rounded-xl border p-5 block transition-colors hover:border-[var(--accent-blue)]" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <CardTitle>Net Worth Trend</CardTitle>
@@ -177,9 +177,9 @@ export default function DashboardPage() {
               <Area type="monotone" dataKey="netWorth" stroke="#3b82f6" strokeWidth={2} fill="url(#nwGrad)" />
             </AreaChart>
           </ResponsiveContainer>
-        </div>
+        </Link>
 
-        <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+        <Link href="/expenses" className="rounded-xl border p-5 block transition-colors hover:border-[var(--accent-blue)]" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <CardTitle>Expense Breakdown</CardTitle>
           <p className="text-xl font-semibold mt-0.5 mb-4" style={{ color: "var(--text-primary)" }}>{fmt(summary.monthlyExpenses)}/mo</p>
           <ResponsiveContainer width="100%" height={140}>
@@ -206,40 +206,40 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
           <CardTitle>Balance Sheet Snapshot</CardTitle>
           <div className="mt-4 space-y-3">
-            <div>
+            <Link href="/assets" className="block group">
               <div className="flex justify-between text-sm mb-1">
-                <span style={{ color: "var(--text-secondary)" }}>Regular Assets</span>
+                <span className="group-hover:underline" style={{ color: "var(--text-secondary)" }}>Regular Assets</span>
                 <span className="font-semibold" style={{ color: "var(--accent-green)" }}>{fmt(summary.totalAssets - retirementTotal)}</span>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
                 <div className="h-full rounded-full" style={{ width: "100%", background: "var(--accent-green)" }} />
               </div>
-            </div>
-            <div>
+            </Link>
+            <Link href="/retirement" className="block group">
               <div className="flex justify-between text-sm mb-1">
-                <span style={{ color: "var(--text-secondary)" }}>Retirement Accounts</span>
+                <span className="group-hover:underline" style={{ color: "var(--text-secondary)" }}>Retirement Accounts</span>
                 <span className="font-semibold" style={{ color: "var(--accent-purple)" }}>{fmt(retirementTotal)}</span>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
                 <div className="h-full rounded-full" style={{ width: `${summary.totalAssets > 0 ? (retirementTotal / summary.totalAssets) * 100 : 0}%`, background: "var(--accent-purple)" }} />
               </div>
-            </div>
-            <div>
+            </Link>
+            <Link href="/debts" className="block group">
               <div className="flex justify-between text-sm mb-1">
-                <span style={{ color: "var(--text-secondary)" }}>Total Debt</span>
+                <span className="group-hover:underline" style={{ color: "var(--text-secondary)" }}>Total Debt</span>
                 <span className="font-semibold" style={{ color: "var(--accent-red)" }}>{fmt(summary.totalDebt)}</span>
               </div>
               <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "var(--bg-muted)" }}>
                 <div className="h-full rounded-full" style={{ width: `${summary.totalAssets > 0 ? (summary.totalDebt / summary.totalAssets) * 100 : 0}%`, background: "var(--accent-red)" }} />
               </div>
-            </div>
+            </Link>
             <div className="pt-3 border-t" style={{ borderColor: "var(--border-subtle)" }}>
               <div className="flex justify-between">
                 <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>Net Worth</span>
@@ -274,7 +274,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+      <Link href="/debts" className="rounded-xl border p-5 block transition-colors hover:border-[var(--accent-blue)]" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between mb-4">
           <CardTitle>Active Debts</CardTitle>
           <CreditCard size={16} style={{ color: "var(--text-muted)" }} />
@@ -297,7 +297,7 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
-      </div>
+      </Link>
       </>}
     </div>
   );
