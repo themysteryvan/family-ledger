@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, Loader2, RotateCcw, User } from "lucide-react";
 import { useFinanceStore } from "@/store/finance-store";
 import { buildFinancialSummary, toMonthly } from "@/lib/finance";
-import type { Income, Expense, Asset, Debt, Project } from "@/types";
+import type { Income, Expense, Asset, Debt, Project, RetirementAccount } from "@/types";
 
 interface Message {
   id: string;
@@ -27,8 +27,9 @@ function buildFinancialContext(
   assets: Asset[],
   debts: Debt[],
   projects: Project[],
-  retirementTotal = 0,
+  retirementAccounts: RetirementAccount[],
 ) {
+  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const summary = buildFinancialSummary(incomes, expenses, assets, debts, retirementTotal);
 
   const expensesByCategory = expenses.reduce((acc, e) => {
@@ -97,6 +98,15 @@ function buildFinancialContext(
       category: p.category,
       targetDate: p.targetDate,
     })),
+    retirementAccounts: retirementAccounts.map((r) => ({
+      name: r.name,
+      type: r.type,
+      owner: r.owner,
+      balance: r.balance,
+      monthlyContribution: r.contributionYtd,
+      employerMatchPct: r.employerMatchPct,
+    })),
+    retirementTotal,
   };
 }
 
@@ -161,7 +171,6 @@ function MessageBubble({ message }: { message: Message }) {
 
 export default function AdvisorPage() {
   const { incomes, expenses, assets, debts, projects, retirementAccounts } = useFinanceStore();
-  const retirementTotal = retirementAccounts.reduce((s, a) => s + a.balance, 0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -190,7 +199,7 @@ export default function AdvisorPage() {
     setLoading(true);
 
     try {
-      const financialContext = buildFinancialContext(incomes, expenses, assets, debts, projects, retirementTotal);
+      const financialContext = buildFinancialContext(incomes, expenses, assets, debts, projects, retirementAccounts);
       const res = await fetch("/api/advisor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -264,7 +273,7 @@ export default function AdvisorPage() {
               </div>
               <h2 className="font-semibold text-lg" style={{ color: "var(--text-primary)" }}>Your AI financial advisor</h2>
               <p className="text-sm mt-1 max-w-sm" style={{ color: "var(--text-muted)" }}>
-                Ask anything about your finances. I have access to all your income, expenses, assets, debts, and projects.
+                Ask anything about your finances. I have access to all your income, expenses, assets, debts, retirement accounts, and projects.
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
