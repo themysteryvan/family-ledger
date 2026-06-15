@@ -121,6 +121,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [signedUpEmail, setSignedUpEmail] = useState<string | null>(null);
   const [legalModal, setLegalModal] = useState<LegalModal>(null);
 
   function switchMode(m: Mode) {
@@ -158,7 +159,7 @@ export default function LoginPage() {
         console.error("Signup error:", error);
         setError(error.message);
       } else {
-        router.push("/dashboard");
+        setSignedUpEmail(email);
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -191,6 +192,56 @@ export default function LoginPage() {
     privacy: "Privacy Policy",
     ai: "AI & Financial Disclaimer",
   };
+
+  if (signedUpEmail) {
+    return (
+      <div className="w-full max-w-sm text-center">
+        <div className="flex items-center justify-center gap-2.5 mb-10">
+          <span
+            className="flex items-center justify-center w-9 h-9 rounded-xl"
+            style={{ background: "var(--accent-blue-dim)" }}
+          >
+            <Wallet size={18} style={{ color: "var(--accent-blue)" }} />
+          </span>
+          <span className="text-xl font-semibold tracking-tight" style={{ color: "var(--text-primary)" }}>
+            Standing Ledger
+          </span>
+        </div>
+        <div
+          className="rounded-2xl border p-8"
+          style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
+        >
+          <div
+            className="flex items-center justify-center w-12 h-12 rounded-full mx-auto mb-4"
+            style={{ background: "var(--accent-blue-dim)" }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-blue)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+            </svg>
+          </div>
+          <h2 className="text-lg font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+            Check your inbox
+          </h2>
+          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+            We sent a confirmation link to{" "}
+            <span className="font-medium" style={{ color: "var(--text-secondary)" }}>{signedUpEmail}</span>.
+            Click the link to activate your account.
+          </p>
+          <p className="text-xs mt-4" style={{ color: "var(--text-muted)" }}>
+            Didn&apos;t receive it?{" "}
+            <button
+              onClick={() => setSignedUpEmail(null)}
+              className="underline"
+              style={{ color: "var(--accent-blue)" }}
+            >
+              Go back
+            </button>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
