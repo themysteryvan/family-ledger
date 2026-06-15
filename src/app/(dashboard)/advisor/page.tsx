@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, Loader2, RotateCcw, User } from "lucide-react";
+import { Sparkles, Send, Loader2, RotateCcw, User, MessageSquare } from "lucide-react";
 import { useFinanceStore } from "@/store/finance-store";
 import { buildFinancialSummary, toMonthly } from "@/lib/finance";
 import type { Income, Expense, Asset, Debt, Project, RetirementAccount } from "@/types";
@@ -170,16 +170,25 @@ function MessageBubble({ message }: { message: Message }) {
 }
 
 export default function AdvisorPage() {
-  const { incomes, expenses, assets, debts, projects, retirementAccounts } = useFinanceStore();
+  const { incomes, expenses, assets, debts, projects, retirementAccounts, isAuthenticatedUser } = useFinanceStore();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, loading]);
+
+  useEffect(() => {
+    if (!isAuthenticatedUser) return;
+    fetch("/api/advisor")
+      .then((r) => r.json())
+      .then((d) => { if (typeof d.remaining === "number") setRemaining(d.remaining); })
+      .catch(() => {});
+  }, [isAuthenticatedUser]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -209,12 +218,25 @@ export default function AdvisorPage() {
         }),
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ error: res.statusText }));
-        throw new Error(err.error || "Request failed");
+      const body = await res.json().catch(() => ({ error: res.statusText }));
+
+      if (res.status === 429 || body.error === "LIMIT_REACHED") {
+        setRemaining(0);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: "You've reached your 10 message daily limit. Your limit resets at midnight. Upgrade to Pro for unlimited access.",
+          },
+        ]);
+        return;
       }
 
-      const { reply } = await res.json();
+      if (!res.ok) throw new Error(body.error || "Request failed");
+
+      const { reply, remaining: newRemaining } = body;
+      if (typeof newRemaining === "number") setRemaining(newRemaining);
       setMessages((prev) => [
         ...prev,
         { id: (Date.now() + 1).toString(), role: "assistant", content: reply },
@@ -252,15 +274,29 @@ export default function AdvisorPage() {
             AI advisor with access to your complete financial picture
           </p>
         </div>
-        {messages.length > 0 && (
-          <button
-            onClick={() => setMessages([])}
-            className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg"
-            style={{ color: "var(--text-muted)", background: "var(--bg-elevated)" }}
-          >
-            <RotateCcw size={13} /> New chat
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {isAuthenticatedUser && remaining !== null && (
+            <span
+              className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg font-medium"
+              style={{
+                background: remaining === 0 ? "var(--accent-red-dim)" : remaining <= 3 ? "var(--accent-amber-dim)" : "var(--bg-elevated)",
+                color: remaining === 0 ? "var(--accent-red)" : remaining <= 3 ? "var(--accent-amber)" : "var(--text-muted)",
+              }}
+            >
+              <MessageSquare size={12} />
+              {remaining === 0 ? "Daily limit reached" : `${remaining} message${remaining === 1 ? "" : "s"} remaining today`}
+            </span>
+          )}
+          {messages.length > 0 && (
+            <button
+              onClick={() => setMessages([])}
+              className="flex items-center gap-2 text-sm px-3 py-2 rounded-lg"
+              style={{ color: "var(--text-muted)", background: "var(--bg-elevated)" }}
+            >
+              <RotateCcw size={13} /> New chat
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Chat area */}
@@ -318,21 +354,26 @@ export default function AdvisorPage() {
       <div className="flex-shrink-0 pt-3">
         <div
           className="flex items-end gap-3 rounded-xl border px-4 py-3"
-          style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
+          style={{
+            background: "var(--bg-surface)",
+            borderColor: remaining === 0 ? "var(--accent-red)" : "var(--border)",
+            opacity: remaining === 0 ? 0.6 : 1,
+          }}
         >
           <textarea
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Ask about your finances… (Enter to send, Shift+Enter for new line)"
+            placeholder={remaining === 0 ? "Daily limit reached — resets at midnight" : "Ask about your finances… (Enter to send, Shift+Enter for new line)"}
+            disabled={remaining === 0}
             rows={1}
-            className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed"
+            className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed disabled:cursor-not-allowed"
             style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "160px" }}
           />
           <button
             onClick={() => send(input)}
-            disabled={!input.trim() || loading}
+            disabled={!input.trim() || loading || remaining === 0}
             className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg disabled:opacity-30 transition-opacity"
             style={{ background: "var(--accent-blue)" }}
           >
