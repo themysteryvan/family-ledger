@@ -3,11 +3,13 @@
 import { useState, useEffect } from "react";
 import { Menu, LogIn, Wallet } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Sidebar } from "./sidebar";
 import { cn } from "@/lib/utils";
 
 export function NavShell({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
 
@@ -41,7 +43,7 @@ export function NavShell({ children }: { children: React.ReactNode }) {
           "fixed inset-y-0 left-0 z-30 w-56 flex-shrink-0 h-full",
           "transition-transform duration-200 ease-in-out",
           sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          "md:relative md:translate-x-0 md:transition-none"
+          "md:relative md:z-auto md:translate-x-0 md:transition-none"
         )}
       >
         <Sidebar onClose={closeSidebar} />
@@ -75,32 +77,32 @@ export function NavShell({ children }: { children: React.ReactNode }) {
             </span>
           </div>
 
-          {loggedIn !== true && (
-            <Link
-              href="/login"
+          {loggedIn === false && (
+            <button
+              onClick={() => router.push("/login")}
               className="ml-auto flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold"
               style={{ background: "var(--accent-blue)", color: "#fff" }}
             >
               <LogIn size={13} />
               Sign In
-            </Link>
+            </button>
           )}
         </div>
 
-        {/* Desktop Sign In bar — only when not logged in */}
-        {loggedIn !== true && (
+        {/* Desktop Sign In bar — only when confirmed not logged in */}
+        {loggedIn === false && (
           <div
             className="hidden md:flex justify-end px-6 py-3 border-b flex-shrink-0"
             style={{ background: "var(--bg-surface)", borderColor: "var(--border-subtle)" }}
           >
-            <Link
-              href="/login"
+            <button
+              onClick={() => router.push("/login")}
               className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
               style={{ background: "var(--accent-blue)", color: "#fff" }}
             >
               <LogIn size={15} />
               Sign In / Create Account
-            </Link>
+            </button>
           </div>
         )}
 
