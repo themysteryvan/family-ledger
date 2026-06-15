@@ -294,11 +294,16 @@ export const useFinanceStore = create<FinanceStore>()(
 
   addIncome(item) {
     const id = uid();
-    set((s) => ({ incomes: [...s.incomes, { ...item, id }] }));
     const { householdId } = get();
+    // Optimistic update
+    set((s) => ({ incomes: [...s.incomes, { ...item, id }] }));
     if (householdId) {
       createClient().from("income").insert({ id, ...fromIncome(item, householdId) }).then(({ error }) => {
-        if (error) console.error("[finance-store] Failed to insert income:", error);
+        if (error) {
+          console.error("[finance-store] Failed to insert income:", error);
+          // Rollback — don't leave a phantom record that will vanish on next load
+          set((s) => ({ incomes: s.incomes.filter((i) => i.id !== id) }));
+        }
       });
     }
   },

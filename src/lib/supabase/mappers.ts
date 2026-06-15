@@ -132,6 +132,7 @@ export const fromIncome = (item: Omit<Income, "id">, householdId: string) => ({
   household_id: householdId, name: item.name, amount: item.amount,
   frequency: item.frequency,
   type: item.category,
+  owner: item.owner || "",
   guaranteed: item.isActive,
   start_date: item.startDate ?? null,
   data_source: item.dataSource ?? null,
