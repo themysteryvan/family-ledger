@@ -14,7 +14,7 @@ type LegalModal = "terms" | "privacy" | "ai" | null;
 function TermsContent() {
   return (
     <div className="space-y-4 text-sm" style={{ color: "var(--text-secondary)" }}>
-      <p style={{ color: "var(--text-muted)" }}>Effective date: June 2025</p>
+      <p style={{ color: "var(--text-muted)" }}>Effective date: June 2026</p>
 
       <section>
         <h3 className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Use of the Platform</h3>
@@ -52,7 +52,7 @@ function TermsContent() {
 function PrivacyContent() {
   return (
     <div className="space-y-4 text-sm" style={{ color: "var(--text-secondary)" }}>
-      <p style={{ color: "var(--text-muted)" }}>Effective date: June 2025</p>
+      <p style={{ color: "var(--text-muted)" }}>Effective date: June 2026</p>
 
       <section>
         <h3 className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>What Data We Collect</h3>
@@ -85,7 +85,7 @@ function PrivacyContent() {
 function AIDisclaimerContent() {
   return (
     <div className="space-y-4 text-sm" style={{ color: "var(--text-secondary)" }}>
-      <p style={{ color: "var(--text-muted)" }}>Effective date: June 2025</p>
+      <p style={{ color: "var(--text-muted)" }}>Effective date: June 2026</p>
 
       <section>
         <h3 className="font-semibold mb-1" style={{ color: "var(--text-primary)" }}>Informational Purposes Only</h3>

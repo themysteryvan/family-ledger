@@ -1,16 +1,23 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Check } from "lucide-react";
+import { Check, Trash2 } from "lucide-react";
 import { CardTitle } from "@/components/ui/card";
 import { useFinanceStore } from "@/store/finance-store";
 import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
+  const router = useRouter();
   const householdName = useFinanceStore((s) => s.householdName);
   const updateHouseholdName = useFinanceStore((s) => s.updateHouseholdName);
+  const clearSupabaseData = useFinanceStore((s) => s.clearSupabaseData);
   const [nameInput, setNameInput] = useState("");
   const [nameSaved, setNameSaved] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteStatus, setDeleteStatus] = useState<"idle" | "pending" | "error">("idle");
+  const [deleteError, setDeleteError] = useState("");
 
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [emailInput, setEmailInput] = useState("");
@@ -81,6 +88,21 @@ export default function SettingsPage() {
     } else {
       setEmailStatus("sent");
     }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleteStatus("pending");
+    setDeleteError("");
+    const res = await fetch("/api/account", { method: "DELETE" });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setDeleteStatus("error");
+      setDeleteError(body.error || "Something went wrong. Please try again.");
+      return;
+    }
+    clearSupabaseData();
+    await createClient().auth.signOut();
+    router.push("/login");
   }
 
   const inputStyle = {
@@ -220,6 +242,49 @@ export default function SettingsPage() {
                 )}
               </div>
             </form>
+          </div>
+          {/* Delete Account */}
+          <div className="rounded-xl border p-5" style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}>
+            <CardTitle>Delete Account</CardTitle>
+            <p className="text-sm mt-2" style={{ color: "var(--text-muted)" }}>
+              Permanently delete your account and all associated data — income, expenses, assets, debts, retirement accounts, and projects. This cannot be undone.
+            </p>
+            {!showDeleteConfirm ? (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ background: "var(--accent-red-dim)", color: "var(--accent-red)" }}
+              >
+                <Trash2 size={14} /> Delete my account
+              </button>
+            ) : (
+              <div className="mt-4 p-4 rounded-lg border" style={{ borderColor: "var(--accent-red)", background: "var(--accent-red-dim)" }}>
+                <p className="text-sm font-medium mb-3" style={{ color: "var(--accent-red)" }}>
+                  Are you sure? This will permanently delete all your data and cannot be undone.
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={handleDeleteAccount}
+                    disabled={deleteStatus === "pending"}
+                    className="px-4 py-2 rounded-lg text-sm font-medium"
+                    style={{ background: "var(--accent-red)", color: "#fff", opacity: deleteStatus === "pending" ? 0.6 : 1 }}
+                  >
+                    {deleteStatus === "pending" ? "Deleting…" : "Yes, delete everything"}
+                  </button>
+                  <button
+                    onClick={() => { setShowDeleteConfirm(false); setDeleteError(""); setDeleteStatus("idle"); }}
+                    disabled={deleteStatus === "pending"}
+                    className="px-4 py-2 rounded-lg text-sm"
+                    style={{ color: "var(--text-muted)", background: "var(--bg-elevated)" }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+                {deleteStatus === "error" && (
+                  <p className="mt-2 text-xs" style={{ color: "var(--accent-red)" }}>{deleteError}</p>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
