@@ -133,14 +133,14 @@ function MessageBubble({ message }: { message: Message }) {
     // Bullet items
     .replace(
       /^- (.+)$/gm,
-      '<li style="color:var(--text-primary);line-height:1.7;padding-left:0.25rem">$1</li>'
+      '<li style="color:var(--text-primary);line-height:1.6;padding-left:0.15rem">$1</li>'
     )
     .replace(
       /(<li[\s\S]*?<\/li>)+/g,
-      (match) => `<ul style="list-style-type:disc;padding-left:1.25rem;margin:0.75rem 0;display:flex;flex-direction:column;gap:0.35rem">${match}</ul>`
+      (match) => `<ul style="list-style-type:disc;padding-left:1.1rem;margin:0.4rem 0;display:flex;flex-direction:column;gap:0.15rem">${match}</ul>`
     )
     // Paragraph breaks
-    .replace(/\n\n/g, '<div style="height:0.75rem"></div>')
+    .replace(/\n\n/g, '<div style="height:0.5rem"></div>')
     .replace(/\n/g, "<br />");
 
   return (
