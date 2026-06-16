@@ -199,7 +199,7 @@ export default function AdvisorPage() {
   }, [input]);
 
   async function send(content: string) {
-    if (!content.trim() || loading) return;
+    if (!content.trim() || loading || !isAuthenticatedUser) return;
 
     const userMsg: Message = { id: Date.now().toString(), role: "user", content: content.trim() };
     const nextMessages = [...messages, userMsg];
@@ -312,22 +312,24 @@ export default function AdvisorPage() {
                 Ask anything about your finances. I have access to all your income, expenses, assets, debts, retirement accounts, and projects.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
-              {SUGGESTED_PROMPTS.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => send(prompt)}
-                  className="text-left text-sm px-4 py-3 rounded-xl border transition-colors hover:border-[var(--accent-blue)]"
-                  style={{
-                    background: "var(--bg-elevated)",
-                    borderColor: "var(--border)",
-                    color: "var(--text-secondary)",
-                  }}
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+            {isAuthenticatedUser && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-2xl">
+                {SUGGESTED_PROMPTS.map((prompt) => (
+                  <button
+                    key={prompt}
+                    onClick={() => send(prompt)}
+                    className="text-left text-sm px-4 py-3 rounded-xl border transition-colors hover:border-[var(--accent-blue)]"
+                    style={{
+                      background: "var(--bg-elevated)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-secondary)",
+                    }}
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <div className="p-5 space-y-5">
@@ -352,40 +354,61 @@ export default function AdvisorPage() {
 
       {/* Input */}
       <div className="flex-shrink-0 pt-3">
-        <div
-          className="flex items-end gap-3 rounded-xl border px-4 py-3"
-          style={{
-            background: "var(--bg-surface)",
-            borderColor: remaining === 0 ? "var(--accent-red)" : "var(--border)",
-            opacity: remaining === 0 ? 0.6 : 1,
-          }}
-        >
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            placeholder={remaining === 0 ? "Daily limit reached — resets at midnight" : "Ask about your finances… (Enter to send, Shift+Enter for new line)"}
-            disabled={remaining === 0}
-            rows={1}
-            className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed disabled:cursor-not-allowed"
-            style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "160px" }}
-          />
-          <button
-            onClick={() => send(input)}
-            disabled={!input.trim() || loading || remaining === 0}
-            className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg disabled:opacity-30 transition-opacity"
-            style={{ background: "var(--accent-blue)" }}
+        {!isAuthenticatedUser ? (
+          <div
+            className="flex flex-col items-center justify-center gap-3 rounded-xl border px-6 py-5 text-center"
+            style={{ background: "var(--bg-surface)", borderColor: "var(--border)" }}
           >
-            {loading
-              ? <Loader2 size={15} className="animate-spin" style={{ color: "#fff" }} />
-              : <Send size={15} style={{ color: "#fff" }} />
-            }
-          </button>
-        </div>
-        <p className="text-xs mt-2 text-center" style={{ color: "var(--text-muted)" }}>
-          Financial advice is AI-generated and for informational purposes only. Consult a licensed advisor for major decisions.
-        </p>
+            <p className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
+              Create a free account to use the AI advisor
+            </p>
+            <a
+              href="/login"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+              style={{ background: "var(--accent-blue)", color: "#fff" }}
+            >
+              <Sparkles size={14} />
+              Create Account
+            </a>
+          </div>
+        ) : (
+          <>
+            <div
+              className="flex items-end gap-3 rounded-xl border px-4 py-3"
+              style={{
+                background: "var(--bg-surface)",
+                borderColor: remaining === 0 ? "var(--accent-red)" : "var(--border)",
+                opacity: remaining === 0 ? 0.6 : 1,
+              }}
+            >
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={onKeyDown}
+                placeholder={remaining === 0 ? "Daily limit reached — resets at midnight" : "Ask about your finances… (Enter to send, Shift+Enter for new line)"}
+                disabled={remaining === 0}
+                rows={1}
+                className="flex-1 bg-transparent resize-none outline-none text-sm leading-relaxed disabled:cursor-not-allowed"
+                style={{ color: "var(--text-primary)", minHeight: "24px", maxHeight: "160px" }}
+              />
+              <button
+                onClick={() => send(input)}
+                disabled={!input.trim() || loading || remaining === 0}
+                className="flex-shrink-0 flex items-center justify-center w-8 h-8 rounded-lg disabled:opacity-30 transition-opacity"
+                style={{ background: "var(--accent-blue)" }}
+              >
+                {loading
+                  ? <Loader2 size={15} className="animate-spin" style={{ color: "#fff" }} />
+                  : <Send size={15} style={{ color: "#fff" }} />
+                }
+              </button>
+            </div>
+            <p className="text-xs mt-2 text-center" style={{ color: "var(--text-muted)" }}>
+              Financial advice is AI-generated and for informational purposes only. Consult a licensed advisor for major decisions.
+            </p>
+          </>
+        )}
       </div>
     </div>
   );
